@@ -87,7 +87,7 @@ class UserDB:
                 """,
                 (email,),
             ).fetchone()
-            return cast(dict[str, Any], row)["email"]
+            return cast(dict[str, Any] | None, row)
 
     def update_user(
             self,
