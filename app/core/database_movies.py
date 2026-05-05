@@ -53,7 +53,7 @@ class MovieDB:
         except psycopg.IntegrityError:
             raise DuplicateEntryError("Movie already exists")
 
-    def get_movies(self, limit:int, offset:int) -> list[dict[str, Any]]:
+    def get_movies(self, limit:int, offset:int) -> list[Any]:
         with self.pool.connection() as conn:
             rows=conn.execute(
                 """
@@ -64,7 +64,7 @@ class MovieDB:
                 """,
                 (limit, offset,),
             ).fetchall()
-            return cast(list[dict[str, Any]], list[rows])
+            return list(rows)
 
     def get_movie_by_id(self, movie_id: int) -> dict[str, Any] | None:
         with self.pool.connection() as conn:

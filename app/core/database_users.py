@@ -52,7 +52,7 @@ class UserDB:
         except psycopg.IntegrityError:
             raise DuplicateEntryError("CPF or email already exists")
 
-    def list_users(self, limit:int, offset:int) -> list[dict[str, Any]]:
+    def list_users(self, limit:int, offset:int) -> list[Any]:
         with self.pool.connection() as conn:
             rows=conn.execute(
                 """
@@ -63,7 +63,7 @@ class UserDB:
                 """,
                 (limit, offset,),
             ).fetchall()
-            return cast(list[dict[str, Any]], list(rows))
+            return list(rows)
 
     def get_user_by_id(self, user_id:int) -> dict[str, Any] | None:
         with self.pool.connection() as conn:
