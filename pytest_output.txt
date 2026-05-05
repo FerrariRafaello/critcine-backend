@@ -1,0 +1,31 @@
+============================= test session starts ==============================
+platform linux -- Python 3.10.12, pytest-9.0.3, pluggy-1.6.0 -- /home/rafaello/EXERCICES/Reviews/venv/bin/python
+cachedir: .pytest_cache
+rootdir: /home/rafaello/EXERCICES/Reviews
+configfile: pytest.ini
+plugins: anyio-4.13.0
+collecting ... collected 21 items
+
+tests/test_auth.py::test_login_success PASSED                            [  4%]
+tests/test_auth.py::test_login_wrong_password PASSED                     [  9%]
+tests/test_auth.py::test_login_user_not_found PASSED                     [ 14%]
+tests/test_auth.py::test_protect_route_without_token PASSED              [ 19%]
+tests/test_auth.py::test_protected_route_with_invalid_token PASSED       [ 23%]
+tests/test_auth.py::test_protected_route_with_valid_token PASSED         [ 28%]
+tests/test_auth.py::test_expired_token PASSED                            [ 33%]
+tests/test_auth.py::test_token_wrong_secret PASSED                       [ 38%]
+tests/test_auth.py::test_token_missing_sub PASSED                        [ 42%]
+tests/test_movies.py::test_crud_flow_movies PASSED                       [ 47%]
+tests/test_movies.py::test_get_not_found PASSED                          [ 52%]
+tests/test_movies.py::test_update_not_found PASSED                       [ 57%]
+tests/test_movies.py::test_patch_not_found PASSED                        [ 61%]
+tests/test_movies.py::test_delete_not_found PASSED                       [ 66%]
+tests/test_users.py::test_crud_flow_users PASSED                         [ 71%]
+tests/test_users.py::test_get_not_found PASSED                           [ 76%]
+tests/test_users.py::test_update_not_found PASSED                        [ 80%]
+tests/test_users.py::test_patch_not_found PASSED                         [ 85%]
+tests/test_users.py::test_delete_not_found PASSED                        [ 90%]
+tests/test_users.py::test_create_duplicate_cpf_conflict PASSED           [ 95%]
+tests/test_users.py::test_cpf_raise_error PASSED                         [100%]
+
+============================= 21 passed in 10.77s ==============================

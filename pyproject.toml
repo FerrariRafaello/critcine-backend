@@ -1,0 +1,9 @@
+[toll.ruff]
+target-version="py310"
+
+[toll.ruff.lint]
+select=["E", "F", "I"]
+ignore=["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/conftest.py"=["E402"]

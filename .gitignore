@@ -1,0 +1,7 @@
+venv
+pycache
+.pytest_cache
+.env
+app/core/movies.db
+app/core/users.db
+.pytest_output.txt
