@@ -45,6 +45,7 @@ from app.main import app
 @pytest.fixture(scope="function")
 def test_db_movies():
     db_url = os.getenv("TEST_DATABASE_URL") or os.getenv("DATABASE_URL")
+    assert db_url, "DATABASE_URL is not configured"
 
     with ConnectionPool(
         db_url,
@@ -55,12 +56,13 @@ def test_db_movies():
     ) as pool:
         with pool.connection() as conn:
             conn.execute("TRUNCATE TABLE movies RESTART IDENTITY;")
-        yield MovieDB(pool=pool)
+        yield MovieDB(pool=pool)#type: ignore
 
 
 @pytest.fixture(scope="function")
 def test_db_users():
     db_url = os.getenv("TEST_DATABASE_URL") or os.getenv("DATABASE_URL")
+    assert db_url, "DATABASE_URL is not configured"
 
     with ConnectionPool(
         db_url,
@@ -71,7 +73,7 @@ def test_db_users():
     ) as pool:
         with pool.connection() as conn:
             conn.execute("TRUNCATE TABLE users RESTART IDENTITY;")
-        yield UserDB(pool=pool)
+        yield UserDB(pool=pool)#type: ignore
 
 
 @pytest.fixture(scope="function")
