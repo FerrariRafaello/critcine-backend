@@ -10,9 +10,6 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from slowapi import Limiter
-from slowapi.util import get_remote_address
-
 # _ Main Router
 ROOT_DIR = Path(__file__).resolve().parents[1]
 if str(ROOT_DIR) not in sys.path:
