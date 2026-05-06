@@ -7,3 +7,4 @@ app/core/users.db
 .pytest_output.txt
 __pycache__/
 *.pyc
+test.py
