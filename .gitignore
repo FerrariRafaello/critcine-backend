@@ -5,3 +5,5 @@ pycache
 app/core/movies.db
 app/core/users.db
 .pytest_output.txt
+__pycache__/
+*.pyc
