@@ -7,6 +7,7 @@ from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
 
 from app.core.exceptions import DuplicateEntryError
+from app.core.config import settings
 
 
 # _ DB Class
@@ -17,7 +18,7 @@ class UserDB:
         if pool is not None:
             self.pool=pool
         else:
-            self.db_url=db_url or os.getenv("DATABASE_URL")
+            self.db_url=db_url or settings.DATABASE_URL
             if not self.db_url:
                 raise RuntimeError("DATABASE_URL is not configured")
 

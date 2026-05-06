@@ -10,10 +10,12 @@ from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
 # from jose import JWTError, jwt
 
+from app.core.config import settings
 
-SECRET_KEY:str=os.getenv("JWT_SECRET") or ""
-ALGORITHM=os.getenv("JWT_ALGORITHM", "HS256")
-EXPIRE_MIN=int(os.getenv("JWT_EXPIRE_MINUTES", 60))
+
+SECRET_KEY:str=settings.JWT_SECRET
+ALGORITHM:str=settings.JWT_ALGORITHM
+EXPIRE_MIN:int=settings.JWT_EXPIRE_MINUTES
 
 if not SECRET_KEY:
     raise RuntimeError("JWT_SECRET is no configured")
