@@ -4,6 +4,9 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from contextlib import asynccontextmanager
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 # DBs
 from app.core.database_movies import MovieDB
@@ -27,12 +30,19 @@ async def lifespan(app:FastAPI):
         app.state.db_users.close_db_users()
 
 
+# _ Limiter
+limiter=Limiter(key_func=get_remote_address)
+
+
 # _ Main
 app=FastAPI(
     title="Users/Movies API",
     version="2.0.0",
     lifespan=lifespan
 )
+app.state.limiter=limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler) #type: ignore
+
 
 # _ Helper
 def build_error(code:str, message:str, path:str):

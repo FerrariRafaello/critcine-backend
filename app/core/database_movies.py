@@ -4,6 +4,7 @@ from typing import Any, Optional, cast
 import psycopg
 from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
+from psycopg import Connection
 
 from app.core.exceptions import DuplicateEntryError
 from app.core.config import settings
@@ -13,7 +14,7 @@ from app.core.config import settings
 class MovieDB:
     def __init__(self,
                  db_url: str | None = None,
-                 pool: ConnectionPool | None=None
+                 pool: ConnectionPool[Connection] | None=None
                  ):
         if pool is not None:
             self.pool=pool
