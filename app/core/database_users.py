@@ -1,5 +1,4 @@
 # _ IMPORTS
-import os
 from typing import Any, Optional, cast
 
 import psycopg

@@ -1,5 +1,4 @@
 # _ IMPORTS
-import os
 import jwt as pyjwt
 
 from jwt.exceptions import PyJWTError
