@@ -1,0 +1,69 @@
+# _ IMPORTS
+from app.reviews.database import ReviewDB
+from app.reviews.schemas import ReviewCreate, ReviewUpdate, ReviewOut
+from app.core.exceptions import DuplicateEntryError
+
+
+# _ Service Class
+class ReviewService:
+    def __init__(self, db:ReviewDB)->None:
+        self.db=db
+
+    def create_review(self, user_id:int, payload:ReviewCreate)->ReviewOut:
+        try:
+            review_id=self.db.create_review(
+                user_id=user_id,
+                tmdb_movie_id=payload.tmdb_movie_id,
+                rating=payload.rating,
+                comment=payload.comment
+            )
+            return self.get_review(review_id)
+        except DuplicateEntryError as exc:
+            raise ValueError(str(exc))
+
+    def get_reviews_by_movie(self, tmdb_movie_id:int)->list[ReviewOut]:
+        rows=self.db.get_reviews_by_movie(tmdb_movie_id)
+        return [ReviewOut(**row) for row in rows]
+
+    def get_reviews_by_user(self, user_id:int)->list[ReviewOut]:
+        rows=self.db.get_reviews_by_user(user_id)
+        return [ReviewOut(**row) for row in rows]
+
+    def get_review(self, review_id: int) -> ReviewOut:
+        row = self.db.get_review_by_id(review_id)
+        if row is None:
+            raise LookupError("Review not found")
+        return ReviewOut(**row)
+
+    def update_review(
+            self,
+            review_id:int,
+            user_id:int,
+            payload:ReviewUpdate
+    )-> ReviewOut:
+        review =self.db.get_review_by_id(review_id)
+        if review is None:
+            raise LookupError("Review not found")
+        if review["user_id"] != user_id:
+            raise PermissionError("Not allowed to edit this review")
+
+        updated = self.db.update_review(
+            review_id=review_id,
+            rating=payload.rating,
+            comment=payload.comment
+        )
+        if not updated:
+            raise LookupError("Review not found")
+        return self.get_review(review_id)
+
+    def delete_review(
+            self,
+            review_id:int,
+            user_id:int
+    )->None:
+        review=self.db.get_review_by_id(review_id)
+        if review is None:
+            raise LookupError("Review not found")
+        if review["user_id"] != user_id:
+            raise PermissionError("Not allowed to delete this review")
+        self.db.delete_review(review_id)

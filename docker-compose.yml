@@ -24,6 +24,7 @@ services:
       - "5432:5432"
     volumes:
       - reviews_pgdata:/var/lib/postgresql/data
+      - ./docker/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U reviews_user -d reviews_db"]
       interval: 5s

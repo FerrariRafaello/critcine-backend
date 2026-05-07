@@ -11,12 +11,14 @@ from slowapi.errors import RateLimitExceeded
 # DBs
 from app.core.database_movies import MovieDB
 from app.core.database_users import UserDB
+from app.reviews.database import ReviewDB
 
 # Routers
 from app.movies.router import router as router_movies
 from app.users.router import router as router_users
 from app.auth.router import router as router_auth
 from app.tmdb.router import router as router_tmdb
+from app.reviews.router import router as router_reviews
 
 
 # _ LIFESPAN
@@ -24,11 +26,13 @@ from app.tmdb.router import router as router_tmdb
 async def lifespan(app:FastAPI):
     app.state.db_movies=MovieDB()
     app.state.db_users=UserDB()
+    app.state.db_reviews=ReviewDB()
     try:
         yield
     finally:
         app.state.db_movies.close_db_movies()
         app.state.db_users.close_db_users()
+        app.state.db_reviews.close_db_reviews()
 
 
 # _ Limiter
@@ -55,6 +59,7 @@ app.include_router(router_movies)
 app.include_router(router_users)
 app.include_router(router_auth)
 app.include_router(router_tmdb)
+app.include_router(router_reviews)
 
 
 # _ Health Check

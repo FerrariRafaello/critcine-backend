@@ -20,6 +20,7 @@ load_dotenv(str(ROOT_DIR/".env"))
 # DBs
 from app.core.database_movies import MovieDB
 from app.core.database_users import UserDB
+from app.reviews.database import ReviewDB
 
 # Services
 from app.movies.service import MovieService
@@ -28,10 +29,12 @@ from app.users.service import UserService
 # Routers
 from app.movies.router import get_movie_service
 from app.users.router import get_user_service
+from app.reviews.router import get_review_service
 
 # Auth
 from app.auth.router import get_auth_service
 from app.auth.service import AuthService
+from app.reviews.service import ReviewService
 
 # Pool
 from psycopg_pool import ConnectionPool
@@ -59,6 +62,24 @@ def test_db_movies():
         yield MovieDB(pool=pool)#type: ignore
 
 
+# _ Reviews
+@pytest.fixture(scope="function")
+def test_db_reviews():
+    db_url=os.getenv("TEST_DATABASE_URL") or os.getenv("DATABASE_URL")
+    assert db_url, "DATABASE_URL is not configured"
+
+    with ConnectionPool(
+        db_url,
+        min_size=2,
+        max_size=10,
+        open=True,
+        kwargs={"row_factory": dict_row}
+    ) as pool:
+        with pool.connection() as conn:
+            conn.execute("TRUNCATE TABLE reviews RESTART IDENTITY;")
+        yield ReviewDB(pool=pool) #type: ignore
+
+
 @pytest.fixture(scope="function")
 def test_db_users():
     db_url = os.getenv("TEST_DATABASE_URL") or os.getenv("DATABASE_URL")
@@ -72,7 +93,7 @@ def test_db_users():
         kwargs={"row_factory": dict_row}
     ) as pool:
         with pool.connection() as conn:
-            conn.execute("TRUNCATE TABLE users RESTART IDENTITY;")
+            conn.execute("TRUNCATE TABLE reviews, users RESTART IDENTITY CASCADE;")
         yield UserDB(pool=pool)#type: ignore
 
 
@@ -105,15 +126,19 @@ def client_users(test_db_users):
 
 
 @pytest.fixture(scope="function")
-def client_auth(test_db_users):
+def client_auth(test_db_users, test_db_reviews):
     def override_auth():
         return AuthService(test_db_users)
 
     def override_user_service():
         return UserService(test_db_users)
 
+    def override_review_service():
+        return ReviewService(test_db_reviews)
+
     app.dependency_overrides[get_auth_service]=override_auth
     app.dependency_overrides[get_user_service]=override_user_service
+    app.dependency_overrides[get_review_service]=override_review_service
 
     try:
         with TestClient(app) as client:
