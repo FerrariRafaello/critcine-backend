@@ -16,6 +16,7 @@ from app.core.database_users import UserDB
 from app.movies.router import router as router_movies
 from app.users.router import router as router_users
 from app.auth.router import router as router_auth
+from app.tmdb.router import router as router_tmdb
 
 
 # _ LIFESPAN
@@ -53,6 +54,7 @@ def build_error(code:str, message:str, path:str):
 app.include_router(router_movies)
 app.include_router(router_users)
 app.include_router(router_auth)
+app.include_router(router_tmdb)
 
 
 # _ Health Check
