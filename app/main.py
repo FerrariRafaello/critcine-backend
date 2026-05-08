@@ -45,7 +45,7 @@ limiter=Limiter(key_func=get_remote_address)
 
 # _ Main
 app=FastAPI(
-    title="Users/Movies API",
+    title="Cinelog API",
     version="2.0.0",
     lifespan=lifespan
 )
