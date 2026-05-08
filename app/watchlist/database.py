@@ -1,5 +1,5 @@
 # _ IMPORTS
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 
 import psycopg
