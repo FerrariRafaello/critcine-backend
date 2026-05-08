@@ -27,6 +27,7 @@ class UserDB:
                 min_size=2,
                 max_size=10,
                 open=True,
+                timeout=10,
                 kwargs={"row_factory": dict_row})
 
     def create_user(
