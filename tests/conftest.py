@@ -21,15 +21,18 @@ load_dotenv(str(ROOT_DIR/".env"))
 from app.core.database_movies import MovieDB
 from app.core.database_users import UserDB
 from app.reviews.database import ReviewDB
+from app.watchlist.database import WatchlistDB
 
 # Services
 from app.movies.service import MovieService
 from app.users.service import UserService
+from app.watchlist.service import WatchlistService
 
 # Routers
 from app.movies.router import get_movie_service
 from app.users.router import get_user_service
 from app.reviews.router import get_review_service
+from app.watchlist.router import get_watchlist_service
 
 # Auth
 from app.auth.router import get_auth_service
@@ -80,6 +83,24 @@ def test_db_reviews():
         yield ReviewDB(pool=pool) #type: ignore
 
 
+
+@pytest.fixture(scope="function")
+def test_db_watchlist():
+    db_url=os.getenv("TEST_DATABASE_URL") or os.getenv("DATABASE_URL")
+    assert db_url, "DABATASE_URL is not configured"
+
+    with ConnectionPool(
+        db_url,
+        min_size=2,
+        max_size=10,
+        open=True,
+        kwargs={"row_factory": dict_row}
+    ) as pool:
+        with pool.connection() as conn:
+            conn.execute("TRUNCATE TABLE watchlist RESTART IDENTITY")
+        yield WatchlistDB(pool=pool) #type: ignore
+
+
 @pytest.fixture(scope="function")
 def test_db_users():
     db_url = os.getenv("TEST_DATABASE_URL") or os.getenv("DATABASE_URL")
@@ -126,7 +147,7 @@ def client_users(test_db_users):
 
 
 @pytest.fixture(scope="function")
-def client_auth(test_db_users, test_db_reviews):
+def client_auth(test_db_users, test_db_reviews, test_db_watchlist):
     def override_auth():
         return AuthService(test_db_users)
 
@@ -135,10 +156,14 @@ def client_auth(test_db_users, test_db_reviews):
 
     def override_review_service():
         return ReviewService(test_db_reviews)
+    
+    def override_watchlist_service():
+        return WatchlistService(test_db_watchlist)
 
     app.dependency_overrides[get_auth_service]=override_auth
     app.dependency_overrides[get_user_service]=override_user_service
     app.dependency_overrides[get_review_service]=override_review_service
+    app.dependency_overrides[get_watchlist_service]=override_watchlist_service
 
     try:
         with TestClient(app) as client:
