@@ -2,6 +2,7 @@
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.encoders import jsonable_encoder
 from contextlib import asynccontextmanager
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -51,6 +52,20 @@ app=FastAPI(
 )
 app.state.limiter=limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler) #type: ignore
+
+origins=[
+    "http://localhost:3000",
+    "https://cinelog-production-95d5.up.railway.app",
+    "https://cinelog-frontend-production.up.railway.app",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 # _ Helper
