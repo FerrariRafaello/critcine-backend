@@ -3,6 +3,7 @@ from fastapi import APIRouter, Query, Depends
 from app.tmdb.client import search_movies, get_movie
 from app.tmdb.schemas import MovieResult, MovieSearchResponse
 from app.auth.security import get_current_user_id
+from app.tmdb.client import get_trending, get_now_playing
 
 
 router=APIRouter(prefix="/v1/tmdb", tags=["TMDB"])
@@ -23,3 +24,16 @@ def movie_detail(
     _:int=Depends(get_current_user_id)
 )->MovieResult:
     return get_movie(movie_id)
+
+
+@router.get("/trending", response_model=MovieSearchResponse)
+def trending(
+    _: int = Depends(get_current_user_id)
+) -> MovieSearchResponse:
+    return get_trending()
+
+@router.get("/now-playing", response_model=MovieSearchResponse)
+def now_playing(
+    _: int = Depends(get_current_user_id)
+) -> MovieSearchResponse:
+    return get_now_playing()

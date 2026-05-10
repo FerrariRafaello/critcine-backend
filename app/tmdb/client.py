@@ -33,3 +33,23 @@ def get_movie(movie_id:int)->MovieResult:
         )
         resp.raise_for_status()
         return MovieResult(**resp.json())
+
+
+def get_trending()->MovieSearchResponse:
+    with httpx.Client() as client:
+        resp=client.get(
+            f"{BASE_URL}/trending/movie/week",
+            params={"api_key": settings.TMDB_API_KEY, "language": "pt-br"}
+        )
+        resp.raise_for_status()
+        return MovieSearchResponse(**resp.json())
+
+
+def get_now_playing()->MovieSearchResponse:
+    with httpx.Client() as client:
+        resp =client.get(
+            f"{BASE_URL}/movie/now_playing",
+            params={"api_key":settings.TMDB_API_KEY, "language":"pt-br"}
+        )
+        resp.raise_for_status()
+        return MovieSearchResponse(**resp.json())
