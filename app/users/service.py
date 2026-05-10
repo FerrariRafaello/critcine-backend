@@ -32,7 +32,10 @@ class UserService:
                 name=row["name"],
                 age=row["age"],
                 email=row["email"],
-                cpf=row["cpf"]
+                cpf=row["cpf"],
+                bio=row["bio"],
+                avatar_id=row["avatar_id"],
+                cover_id=row["cover_id"]
             ) for row in rows
         ]
 
@@ -46,7 +49,10 @@ class UserService:
             name=row["name"],
             age=row["age"],
             email=row["email"],
-            cpf=row["cpf"]
+            cpf=row["cpf"],
+            bio=row["bio"],
+            avatar_id=row["avatar_id"],
+            cover_id=row["cover_id"]
         )
 
     def update_user(
@@ -68,7 +74,6 @@ class UserService:
                 age=payload.age,
                 email=payload.email,
                 cpf=payload.cpf
-
             )
         except DuplicateEntryError as exc:
             raise ValueError(str(exc))
@@ -93,7 +98,10 @@ class UserService:
                 name=payload.name,
                 age=payload.age,
                 email=payload.email,
-                cpf=payload.cpf
+                cpf=payload.cpf,
+                bio=payload.bio,
+                avatar_id=payload.avatar_id,
+                cover_id=payload.cover_id
             )
         except DuplicateEntryError as exc:
             raise ValueError(str(exc))
@@ -107,4 +115,3 @@ class UserService:
         deleted = self.db.delete_user(user_id)
         if not deleted:
             raise LookupError("User not found")
-        

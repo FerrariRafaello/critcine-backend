@@ -58,7 +58,7 @@ class UserDB:
         with self.pool.connection() as conn:
             rows=conn.execute(
                 """
-                SELECT id, name, age, email, cpf
+                SELECT id, name, age, email, cpf, bio, avatar_id, cover_id
                 FROM users
                 ORDER BY id
                 LIMIT %s OFFSET %s
@@ -71,7 +71,7 @@ class UserDB:
         with self.pool.connection() as conn:
             row=conn.execute(
                 """
-                SELECT id, name, age, email, cpf
+                SELECT id, name, age, email, cpf, bio, avatar_id, cover_id
                 FROM users
                 WHERE id=%s
                 """,
@@ -83,7 +83,7 @@ class UserDB:
         with self.pool.connection() as conn:
             row=conn.execute(
                 """
-                SELECT id, name, age, email, cpf, hashed_password
+                SELECT id, name, age, email, cpf, hashed_password, bio, avatar_id, cover_id
                 FROM users
                 WHERE email=%s
                 """,
@@ -114,13 +114,16 @@ class UserDB:
             raise DuplicateEntryError("CPF or email already exists")
 
     def patch_user(
-            self,
-            user_id:int,
-            name:Optional[str]=None,
-            age: Optional[int]=None,
-            email:Optional[str]=None,
-            cpf: Optional[str]=None
-    ) -> bool:
+        self,
+        user_id:int,
+        name:Optional[str]=None,
+        age: Optional[int]=None,
+        email:Optional[str]=None,
+        cpf: Optional[str]=None,
+        bio: Optional[str]=None,
+        avatar_id: Optional[str]=None,
+        cover_id: Optional[str]=None
+) -> bool:
         current = self.get_user_by_id(user_id)
         if current is None:
             return False
@@ -133,7 +136,10 @@ class UserDB:
                     SET name=%s,
                         age=%s,
                         email=%s,
-                        cpf=%s
+                        cpf=%s,
+                        bio=%s,
+                        avatar_id=%s,
+                        cover_id=%s
                     WHERE id=%s
                     """,
                     (
@@ -141,6 +147,9 @@ class UserDB:
                         age if age is not None else current["age"],
                         email if email is not None else current["email"],
                         cpf if cpf is not None else current["cpf"],
+                        bio if bio is not None else current["bio"],
+                        avatar_id if avatar_id is not None else current["avatar_id"],
+                        cover_id if cover_id is not None else current["cover_id"],
                         user_id,
                     ),
                 )

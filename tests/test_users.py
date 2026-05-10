@@ -39,6 +39,9 @@ def test_crud_flow_users(client_users, auth_token):
     user_id = created["id"]
     assert created["name"] == payload["name"]
     assert created["cpf"] == payload["cpf"]
+    assert created["bio"] is None
+    assert created["avatar_id"] is None
+    assert created["cover_id"] is None
     assert "id" in created
 
     # List
@@ -81,7 +84,25 @@ def test_crud_flow_users(client_users, auth_token):
     assert updated["cpf"] == updated_json["cpf"]
     assert "id" in updated
 
-    # Patch
+    # Patch bio, avatar, cover
+    resp = client_users.patch(
+        f"/v1/users/{user_id}",
+        json={
+            "bio": "I love movies!",
+            "avatar_id": "cat",
+            "cover_id": "sunset"
+        },
+        headers=headers,
+    )
+    assert resp.status_code == status.HTTP_200_OK
+
+    patched = resp.json()
+    assert patched["bio"] == "I love movies!"
+    assert patched["avatar_id"] == "cat"
+    assert patched["cover_id"] == "sunset"
+    assert patched["id"] == user_id
+
+    # Patch age (bio should persist)
     resp = client_users.patch(
         f"/v1/users/{user_id}",
         json={
@@ -93,6 +114,7 @@ def test_crud_flow_users(client_users, auth_token):
 
     patched = resp.json()
     assert patched["age"] == 25
+    assert patched["bio"] == "I love movies!"
     assert patched["id"] == user_id
 
     # Delete
