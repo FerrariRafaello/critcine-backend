@@ -29,6 +29,9 @@ class UserBase(BaseModel):
     age: int = Field(..., ge=18, le=100)
     email: EmailStr = Field(..., min_length=10, max_length=50)
     cpf: Optional[str] = Field(None, min_length=11, max_length=11)
+    bio: Optional[str] = Field(None, max_length=200)
+    avatar_id: Optional[str] = None
+    cover_id: Optional[str] = None
 
 
 class UserCreate(CpfValidatorMixin, UserBase):
@@ -48,6 +51,9 @@ class UserPatch(CpfValidatorMixin, BaseModel):
     age:Optional[int]=Field(None, ge=18, le=100)
     email: Optional[EmailStr] = Field(None, min_length=10, max_length=50)
     cpf:Optional[str]=Field(None, min_length=11, max_length=11)
+    bio: Optional[str] = Field(None, max_length=200)
+    avatar_id: Optional[str] = None
+    cover_id: Optional[str] = None
     pass
 
 
