@@ -28,7 +28,7 @@ class UserBase(BaseModel):
     )] = Field(..., min_length=2, max_length=50)
     age: int = Field(..., ge=18, le=100)
     email: EmailStr = Field(..., min_length=10, max_length=50)
-    cpf: str = Field(..., min_length=11, max_length=11)
+    cpf: Optional[str] = Field(None, min_length=11, max_length=11)
 
 
 class UserCreate(CpfValidatorMixin, UserBase):
