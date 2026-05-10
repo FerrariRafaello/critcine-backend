@@ -53,3 +53,23 @@ def get_now_playing()->MovieSearchResponse:
         )
         resp.raise_for_status()
         return MovieSearchResponse(**resp.json())
+
+
+def get_movie_credits(movie_id:int)->dict:
+    with httpx.Client() as client:
+        resp=client.get(
+            f"{BASE_URL}/movie/{movie_id}/credits",
+            params={"api_key":settings.TMDB_API_KEY, "language":"pt-br"}
+        )
+        resp.raise_for_status()
+        return resp.json()
+
+
+def get_movie_videos(movie_id:int)->dict:
+    with httpx.Client() as client:
+        resp=client.get(
+            f"{BASE_URL}/movie/{movie_id}/videos",
+            params={"api_key": settings.TMDB_API_KEY, "language":"pt-br"}
+        )
+        resp.raise_for_status()
+        return resp.json()

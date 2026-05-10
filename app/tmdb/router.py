@@ -4,6 +4,8 @@ from app.tmdb.client import search_movies, get_movie
 from app.tmdb.schemas import MovieResult, MovieSearchResponse
 from app.auth.security import get_current_user_id
 from app.tmdb.client import get_trending, get_now_playing
+from app.tmdb.client import search_movies, get_movie, get_trending, get_now_playing, get_movie_credits, get_movie_videos
+
 
 
 router=APIRouter(prefix="/v1/tmdb", tags=["TMDB"])
@@ -37,3 +39,19 @@ def now_playing(
     _: int = Depends(get_current_user_id)
 ) -> MovieSearchResponse:
     return get_now_playing()
+
+
+@router.get("/movies/{movie_id}/credits")
+def movie_credits(
+    movie_id:int,
+    _:int=Depends(get_current_user_id)
+)->dict:
+    return get_movie_credits(movie_id)
+
+
+@router.get("/movies/{movie_id}/videos")
+def movie_videos(
+    movie_id:int,
+    _:int=Depends(get_current_user_id)
+)-> dict:
+    return get_movie_videos(movie_id)

@@ -2,6 +2,9 @@
 from pydantic import BaseModel
 from typing import Optional
 
+class Genre(BaseModel):
+    id:int
+    name:str
 
 class MovieResult(BaseModel):
     id:int
@@ -10,6 +13,8 @@ class MovieResult(BaseModel):
     release_date:Optional[str]=None
     poster_path:Optional[str]=None
     vote_average:float
+    genres: Optional[list[Genre]]=None
+    runtime:Optional[int]=None
 
 
 class MovieSearchResponse(BaseModel):
