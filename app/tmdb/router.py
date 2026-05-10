@@ -1,9 +1,7 @@
 # _ IMPORTS
 from fastapi import APIRouter, Query, Depends
-from app.tmdb.client import search_movies, get_movie
 from app.tmdb.schemas import MovieResult, MovieSearchResponse
 from app.auth.security import get_current_user_id
-from app.tmdb.client import get_trending, get_now_playing
 from app.tmdb.client import search_movies, get_movie, get_trending, get_now_playing, get_movie_credits, get_movie_videos
 
 
