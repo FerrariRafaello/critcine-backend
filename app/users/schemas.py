@@ -32,7 +32,8 @@ class UserBase(BaseModel):
     bio: Optional[str] = Field(None, max_length=200)
     avatar_id: Optional[str] = None
     cover_id: Optional[str] = None
-
+    pronouns: Optional[str]=Field(None, max_length=30)
+    favorite_genres: Optional[str]=Field(None, max_length=200)
 
 class UserCreate(CpfValidatorMixin, UserBase):
     password:str=Field(..., min_length=6)
@@ -54,6 +55,8 @@ class UserPatch(CpfValidatorMixin, BaseModel):
     bio: Optional[str] = Field(None, max_length=200)
     avatar_id: Optional[str] = None
     cover_id: Optional[str] = None
+    pronouns: Optional[str]=Field(None, max_length=30)
+    favorite_genres: Optional[str]=Field(None, max_length=200)
     pass
 
 

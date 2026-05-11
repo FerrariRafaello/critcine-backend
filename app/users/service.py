@@ -34,6 +34,8 @@ class UserService:
                 email=row["email"],
                 cpf=row["cpf"],
                 bio=row["bio"],
+                pronouns=row["pronouns"],
+                favorite_genres=row["favorite_genres"],
                 avatar_id=row["avatar_id"],
                 cover_id=row["cover_id"]
             ) for row in rows
@@ -51,6 +53,8 @@ class UserService:
             email=row["email"],
             cpf=row["cpf"],
             bio=row["bio"],
+            pronouns=row["pronouns"],
+            favorite_genres=row["favorite_genres"],
             avatar_id=row["avatar_id"],
             cover_id=row["cover_id"]
         )
@@ -100,6 +104,8 @@ class UserService:
                 email=payload.email,
                 cpf=payload.cpf,
                 bio=payload.bio,
+                pronouns=payload.pronouns,
+                favorite_genres=payload.favorite_genres,
                 avatar_id=payload.avatar_id,
                 cover_id=payload.cover_id
             )

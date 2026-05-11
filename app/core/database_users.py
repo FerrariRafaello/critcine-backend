@@ -58,7 +58,7 @@ class UserDB:
         with self.pool.connection() as conn:
             rows=conn.execute(
                 """
-                SELECT id, name, age, email, cpf, bio, avatar_id, cover_id
+                SELECT id, name, age, email, cpf, bio, pronouns, favorite_genres, avatar_id, cover_id 
                 FROM users
                 ORDER BY id
                 LIMIT %s OFFSET %s
@@ -71,7 +71,7 @@ class UserDB:
         with self.pool.connection() as conn:
             row=conn.execute(
                 """
-                SELECT id, name, age, email, cpf, bio, avatar_id, cover_id
+                SELECT id, name, age, email, cpf, bio, pronouns, favorite_genres, avatar_id, cover_id
                 FROM users
                 WHERE id=%s
                 """,
@@ -83,7 +83,7 @@ class UserDB:
         with self.pool.connection() as conn:
             row=conn.execute(
                 """
-                SELECT id, name, age, email, cpf, hashed_password, bio, avatar_id, cover_id
+                SELECT id, name, age, email, cpf, hashed_password, bio, pronouns, favorite_genres, avatar_id, cover_id
                 FROM users
                 WHERE email=%s
                 """,
@@ -122,7 +122,9 @@ class UserDB:
         cpf: Optional[str]=None,
         bio: Optional[str]=None,
         avatar_id: Optional[str]=None,
-        cover_id: Optional[str]=None
+        cover_id: Optional[str]=None,
+        pronouns: Optional[str]=None,
+        favorite_genres: Optional[str]=None
 ) -> bool:
         current = self.get_user_by_id(user_id)
         if current is None:
@@ -139,7 +141,9 @@ class UserDB:
                         cpf=%s,
                         bio=%s,
                         avatar_id=%s,
-                        cover_id=%s
+                        cover_id=%s,
+                        pronouns=%s,
+                        favorite_genres=%s
                     WHERE id=%s
                     """,
                     (
@@ -150,6 +154,8 @@ class UserDB:
                         bio if bio is not None else current["bio"],
                         avatar_id if avatar_id is not None else current["avatar_id"],
                         cover_id if cover_id is not None else current["cover_id"],
+                        pronouns if pronouns is not None else current["pronouns"],
+                        favorite_genres if favorite_genres is not None else current["favorite_genres"],
                         user_id,
                     ),
                 )

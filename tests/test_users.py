@@ -42,6 +42,8 @@ def test_crud_flow_users(client_users, auth_token):
     assert created["bio"] is None
     assert created["avatar_id"] is None
     assert created["cover_id"] is None
+    assert created["pronouns"] is None
+    assert created["favorite_genres"] is None
     assert "id" in created
 
     # List
@@ -90,7 +92,9 @@ def test_crud_flow_users(client_users, auth_token):
         json={
             "bio": "I love movies!",
             "avatar_id": "cat",
-            "cover_id": "sunset"
+            "cover_id": "sunset",
+            "pronouns": "he/him",
+            "favorite_genres":"Action, Drama, Comedy"
         },
         headers=headers,
     )
@@ -100,9 +104,11 @@ def test_crud_flow_users(client_users, auth_token):
     assert patched["bio"] == "I love movies!"
     assert patched["avatar_id"] == "cat"
     assert patched["cover_id"] == "sunset"
+    assert patched["pronouns"] == "he/him"
+    assert patched["favorite_genres"] =="Action, Drama, Comedy"
     assert patched["id"] == user_id
 
-    # Patch age (bio should persist)
+    # Patch age - bio should persist
     resp = client_users.patch(
         f"/v1/users/{user_id}",
         json={
@@ -115,6 +121,8 @@ def test_crud_flow_users(client_users, auth_token):
     patched = resp.json()
     assert patched["age"] == 25
     assert patched["bio"] == "I love movies!"
+    assert patched["pronouns"] == "he/him"
+    assert patched["favorite_genres"] == "Action, Drama, Comedy"
     assert patched["id"] == user_id
 
     # Delete
