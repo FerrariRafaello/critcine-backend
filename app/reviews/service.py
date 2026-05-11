@@ -67,3 +67,9 @@ class ReviewService:
         if review["user_id"] != user_id:
             raise PermissionError("Not allowed to delete this review")
         self.db.delete_review(review_id)
+
+    def like_review(self, review_id:int)->ReviewOut:
+        liked=self.db.like_review(review_id)
+        if not liked:
+            raise LookupError("Review not found")
+        return self.get_review(review_id)

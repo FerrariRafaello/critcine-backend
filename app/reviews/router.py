@@ -69,3 +69,12 @@ def delete_review(
     current_user_id:int=Depends(get_current_user_id)
 )->None:
     service.delete_review(review_id=review_id, user_id=current_user_id)
+
+
+@router.post("/{review_id}/like", response_model=ReviewOut)
+def like_review(
+    review_id:int,
+    service:ReviewService=Depends(get_review_service),
+    _:int=Depends(get_current_user_id)
+)->ReviewOut:
+    return service.like_review(review_id)

@@ -30,6 +30,16 @@ class ReviewDB:
                 timeout=10,
                 kwargs={"row_factory": dict_row}
             )
+        self._ensure_likes_column()
+
+    def _ensure_likes_column(self)->None:
+        with self.pool.connection() as conn:
+            conn.execute(
+                """
+                ALTER TABLE reviews
+                ADD COLUMN IF NOT EXISTS likes INTEGER NOT NULL DEFAULT 0
+                """
+            )
 
     def create_review(
             self,
@@ -56,7 +66,7 @@ class ReviewDB:
         with self.pool.connection() as conn:
             rows=conn.execute(
                 """
-                SELECT id, user_id, tmdb_movie_id, rating, comment, created_at
+                SELECT id, user_id, tmdb_movie_id, rating, comment, likes, created_at
                 FROM reviews
                 WHERE tmdb_movie_id = %s
                 ORDER BY created_at DESC
@@ -69,7 +79,7 @@ class ReviewDB:
         with self.pool.connection() as conn:
             rows=conn.execute(
                 """
-                SELECT id, user_id, tmdb_movie_id, rating, comment, created_at
+                SELECT id, user_id, tmdb_movie_id, rating, comment, likes, created_at
                 FROM reviews
                 WHERE user_id = %s
                 ORDER BY created_at DESC
@@ -82,7 +92,7 @@ class ReviewDB:
         with self.pool.connection() as conn:
             row=conn.execute(
                 """
-                SELECT id, user_id, tmdb_movie_id, rating, comment, created_at
+                SELECT id, user_id, tmdb_movie_id, rating, comment, likes, created_at
                 FROM reviews
                 WHERE id = %s
                 """,
@@ -119,6 +129,18 @@ class ReviewDB:
         with self.pool.connection() as conn:
             result=conn.execute(
                 "DELETE FROM reviews WHERE id=%s",
+                (review_id,),
+            )
+            return result.rowcount > 0
+
+    def like_review(self, review_id:int)->bool:
+        with self.pool.connection() as conn:
+            result=conn.execute(
+                """
+                UPDATE reviews
+                SET likes = likes + 1
+                WHERE id = %s
+                """,
                 (review_id,),
             )
             return result.rowcount > 0
