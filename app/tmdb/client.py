@@ -36,13 +36,20 @@ def get_movie(movie_id:int)->MovieResult:
 
 
 def get_trending()->MovieSearchResponse:
-    with httpx.Client() as client:
-        resp=client.get(
-            f"{BASE_URL}/trending/movie/week",
-            params={"api_key": settings.TMDB_API_KEY, "language": "pt-br"}
-        )
-        resp.raise_for_status()
-        return MovieSearchResponse(**resp.json())
+    results=[]
+    seen_ids=set()
+    for page in range(1,3):
+        with httpx.Client() as client:
+            resp=client.get(
+                f"{BASE_URL}/trending/movie/week",
+                params={"api_key": settings.TMDB_API_KEY, "language": "pt-br", "page": page}
+            )
+            resp.raise_for_status()
+            for movie in resp.json()["results"]:
+                if movie["id"] not in seen_ids:
+                    seen_ids.add(movie["id"])
+                    results.append(movie)
+    return MovieSearchResponse(results=results, total_results=len(results), total_pages=1)
 
 
 def get_now_playing()->MovieSearchResponse:
@@ -73,3 +80,20 @@ def get_movie_videos(movie_id:int)->dict:
         )
         resp.raise_for_status()
         return resp.json()
+
+
+def get_top_rated()-> MovieSearchResponse:
+    results=[]
+    seen_ids=set()
+    for page in range(1,2):
+        with httpx.Client() as client:
+            resp=client.get(
+                f"{BASE_URL}/movie/top_rated",
+                params={"api_key": settings.TMDB_API_KEY, "language": "pt-BR", "page": page}
+            )
+            resp.raise_for_status()
+            for movie in resp.json()["results"]:
+                if movie["id"] not in seen_ids:
+                    seen_ids.add(movie["id"])
+                    results.append(movie)
+    return MovieSearchResponse(results=results, total_results=len(results), total_pages=1)
