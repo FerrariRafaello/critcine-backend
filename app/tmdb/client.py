@@ -107,6 +107,16 @@ def get_watch_providers(movie_id: int) -> dict:
         )
         resp.raise_for_status()
         return resp.json()
+
+
+def get_external_ids(movie_id: int) -> dict:
+    with httpx.Client() as client:
+        resp = client.get(
+            f"{BASE_URL}/movie/{movie_id}/external_ids",
+            params={"api_key": settings.TMDB_API_KEY}
+        )
+        resp.raise_for_status()
+        return resp.json()
     
 
 def discover_movies_by_genre(

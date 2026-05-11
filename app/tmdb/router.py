@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Query, Depends
 from app.tmdb.schemas import MovieResult, MovieSearchResponse
 from app.auth.security import get_current_user_id
-from app.tmdb.client import search_movies, get_movie, get_trending, get_now_playing, get_movie_credits, get_movie_videos, get_top_rated, get_watch_providers, discover_movies_by_genre
+from app.tmdb.client import search_movies, get_movie, get_trending, get_now_playing, get_movie_credits, get_movie_videos, get_top_rated, get_watch_providers, discover_movies_by_genre, get_external_ids
 
 
 
@@ -79,3 +79,11 @@ def watch_providers(
     _:int=Depends(get_current_user_id)
 )->dict:
     return get_watch_providers(movie_id)
+
+
+@router.get("/movies/{movie_id}/external-ids")
+def external_ids(
+    movie_id: int,
+    _: int = Depends(get_current_user_id)
+) -> dict:
+    return get_external_ids(movie_id)
