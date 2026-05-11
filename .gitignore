@@ -8,3 +8,4 @@ app/core/users.db
 __pycache__/
 *.pyc
 test.py
+.ruff_cache

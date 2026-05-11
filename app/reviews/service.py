@@ -21,16 +21,16 @@ class ReviewService:
         except DuplicateEntryError as exc:
             raise ValueError(str(exc))
 
-    def get_reviews_by_movie(self, tmdb_movie_id:int)->list[ReviewOut]:
-        rows=self.db.get_reviews_by_movie(tmdb_movie_id)
+    def get_reviews_by_movie(self, tmdb_movie_id:int, current_user_id:int)->list[ReviewOut]:
+        rows=self.db.get_reviews_by_movie(tmdb_movie_id, current_user_id)
         return [ReviewOut(**row) for row in rows]
 
     def get_reviews_by_user(self, user_id:int)->list[ReviewOut]:
         rows=self.db.get_reviews_by_user(user_id)
         return [ReviewOut(**row) for row in rows]
 
-    def get_review(self, review_id: int) -> ReviewOut:
-        row = self.db.get_review_by_id(review_id)
+    def get_review(self, review_id: int, current_user_id:int | None=None) -> ReviewOut:
+        row = self.db.get_review_by_id(review_id, current_user_id)
         if row is None:
             raise LookupError("Review not found")
         return ReviewOut(**row)
@@ -68,8 +68,10 @@ class ReviewService:
             raise PermissionError("Not allowed to delete this review")
         self.db.delete_review(review_id)
 
-    def like_review(self, review_id:int)->ReviewOut:
-        liked=self.db.like_review(review_id)
-        if not liked:
+    def like_review(self, review_id:int, user_id:int)->ReviewOut:
+        result=self.db.like_review(review_id, user_id)
+        if result == "not_found":
             raise LookupError("Review not found")
-        return self.get_review(review_id)
+        if result == "already_liked":
+            raise ValueError("You already liked this review")
+        return self.get_review(review_id, current_user_id=user_id)

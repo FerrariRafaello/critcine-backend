@@ -22,4 +22,5 @@ class ReviewOut(BaseModel):
     rating:float
     comment:Optional[str]=None
     likes:int=0
+    liked_by_me:bool=False
     created_at:datetime

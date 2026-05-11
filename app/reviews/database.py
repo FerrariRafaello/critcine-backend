@@ -30,14 +30,24 @@ class ReviewDB:
                 timeout=10,
                 kwargs={"row_factory": dict_row}
             )
-        self._ensure_likes_column()
+        self._ensure_like_support()
 
-    def _ensure_likes_column(self)->None:
+    def _ensure_like_support(self)->None:
         with self.pool.connection() as conn:
             conn.execute(
                 """
                 ALTER TABLE reviews
                 ADD COLUMN IF NOT EXISTS likes INTEGER NOT NULL DEFAULT 0
+                """
+            )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS review_likes (
+                    review_id INTEGER NOT NULL REFERENCES reviews(id) ON DELETE CASCADE,
+                    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    PRIMARY KEY (review_id, user_id)
+                )
                 """
             )
 
@@ -62,24 +72,41 @@ class ReviewDB:
         except psycopg.IntegrityError:
             raise DuplicateEntryError("Review already exists for this movie")
 
-    def get_reviews_by_movie(self, tmdb_movie_id:int)->list[Any]:
+    def get_reviews_by_movie(self, tmdb_movie_id:int, current_user_id:Optional[int]=None)->list[Any]:
         with self.pool.connection() as conn:
-            rows=conn.execute(
-                """
-                SELECT id, user_id, tmdb_movie_id, rating, comment, likes, created_at
-                FROM reviews
-                WHERE tmdb_movie_id = %s
-                ORDER BY created_at DESC
-                """,
-                (tmdb_movie_id,),
-            ).fetchall()
+            if current_user_id is None:
+                rows=conn.execute(
+                    """
+                    SELECT id, user_id, tmdb_movie_id, rating, comment, likes, FALSE AS liked_by_me, created_at
+                    FROM reviews
+                    WHERE tmdb_movie_id = %s
+                    ORDER BY created_at DESC
+                    """,
+                    (tmdb_movie_id,),
+                ).fetchall()
+            else:
+                rows=conn.execute(
+                    """
+                    SELECT r.id, r.user_id, r.tmdb_movie_id, r.rating, r.comment, r.likes,
+                           EXISTS (
+                               SELECT 1
+                               FROM review_likes rl
+                               WHERE rl.review_id = r.id AND rl.user_id = %s
+                           ) AS liked_by_me,
+                           r.created_at
+                    FROM reviews r
+                    WHERE r.tmdb_movie_id = %s
+                    ORDER BY r.created_at DESC
+                    """,
+                    (current_user_id, tmdb_movie_id),
+                ).fetchall()
             return list(rows)
 
     def get_reviews_by_user(self, user_id:int)->list[Any]:
         with self.pool.connection() as conn:
             rows=conn.execute(
                 """
-                SELECT id, user_id, tmdb_movie_id, rating, comment, likes, created_at
+                SELECT id, user_id, tmdb_movie_id, rating, comment, likes, FALSE AS liked_by_me, created_at
                 FROM reviews
                 WHERE user_id = %s
                 ORDER BY created_at DESC
@@ -88,16 +115,32 @@ class ReviewDB:
             ).fetchall()
             return list(rows)
 
-    def get_review_by_id(self, review_id:int)->dict[str,Any] | None:
+    def get_review_by_id(self, review_id:int, current_user_id:Optional[int]=None)->dict[str,Any] | None:
         with self.pool.connection() as conn:
-            row=conn.execute(
-                """
-                SELECT id, user_id, tmdb_movie_id, rating, comment, likes, created_at
-                FROM reviews
-                WHERE id = %s
-                """,
-                (review_id,),
-            ).fetchone()
+            if current_user_id is None:
+                row=conn.execute(
+                    """
+                    SELECT id, user_id, tmdb_movie_id, rating, comment, likes, FALSE AS liked_by_me, created_at
+                    FROM reviews
+                    WHERE id = %s
+                    """,
+                    (review_id,),
+                ).fetchone()
+            else:
+                row=conn.execute(
+                    """
+                    SELECT r.id, r.user_id, r.tmdb_movie_id, r.rating, r.comment, r.likes,
+                           EXISTS (
+                               SELECT 1
+                               FROM review_likes rl
+                               WHERE rl.review_id = r.id AND rl.user_id = %s
+                           ) AS liked_by_me,
+                           r.created_at
+                    FROM reviews r
+                    WHERE r.id = %s
+                    """,
+                    (current_user_id, review_id),
+                ).fetchone()
             return cast(dict[str,Any] | None, row)
 
     def update_review(
@@ -133,9 +176,29 @@ class ReviewDB:
             )
             return result.rowcount > 0
 
-    def like_review(self, review_id:int)->bool:
+    def like_review(self, review_id:int, user_id:int)->str:
         with self.pool.connection() as conn:
-            result=conn.execute(
+            exists=conn.execute(
+                "SELECT 1 FROM reviews WHERE id = %s",
+                (review_id,),
+            ).fetchone()
+            if exists is None:
+                return "not_found"
+
+            inserted=conn.execute(
+                """
+                INSERT INTO review_likes (review_id, user_id)
+                VALUES (%s, %s)
+                ON CONFLICT (review_id, user_id) DO NOTHING
+                RETURNING review_id
+                """,
+                (review_id, user_id),
+            ).fetchone()
+
+            if inserted is None:
+                return "already_liked"
+
+            conn.execute(
                 """
                 UPDATE reviews
                 SET likes = likes + 1
@@ -143,7 +206,7 @@ class ReviewDB:
                 """,
                 (review_id,),
             )
-            return result.rowcount > 0
+            return "liked"
 
     def close_db_reviews(self)->None:
         self.pool.close()

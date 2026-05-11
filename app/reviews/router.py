@@ -31,9 +31,9 @@ def create_review(
 def get_reviews(
     tmdb_movie_id:int,
     service:ReviewService=Depends(get_review_service),
-    _:int=Depends(get_current_user_id)
+    current_user_id:int=Depends(get_current_user_id)
 )->list[ReviewOut]:
-    return service.get_reviews_by_movie(tmdb_movie_id)
+    return service.get_reviews_by_movie(tmdb_movie_id, current_user_id)
 
 
 # _ Get by user
@@ -75,6 +75,6 @@ def delete_review(
 def like_review(
     review_id:int,
     service:ReviewService=Depends(get_review_service),
-    _:int=Depends(get_current_user_id)
+    current_user_id:int=Depends(get_current_user_id)
 )->ReviewOut:
-    return service.like_review(review_id)
+    return service.like_review(review_id, current_user_id)
