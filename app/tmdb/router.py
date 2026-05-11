@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Query, Depends
 from app.tmdb.schemas import MovieResult, MovieSearchResponse
 from app.auth.security import get_current_user_id
-from app.tmdb.client import search_movies, get_movie, get_trending, get_now_playing, get_movie_credits, get_movie_videos, get_top_rated
+from app.tmdb.client import search_movies, get_movie, get_trending, get_now_playing, get_movie_credits, get_movie_videos, get_top_rated, get_watch_providers, discover_movies_by_genre
 
 
 
@@ -16,6 +16,17 @@ def search(
     _:int=Depends(get_current_user_id)
 )->MovieSearchResponse:
     return search_movies(q,page)
+
+
+@router.get("/discover", response_model=MovieSearchResponse)
+def discover(
+    with_genres: int = Query(..., ge=1),
+    page: int = Query(1, ge=1),
+    sort_by: str = Query("release_date.desc"),
+    _: int = Depends(get_current_user_id),
+) -> MovieSearchResponse:
+    return discover_movies_by_genre(with_genres, page, sort_by)
+
 
 
 @router.get("/movies/{movie_id}", response_model=MovieResult)
@@ -60,3 +71,11 @@ def top_rated(
     _:int=Depends(get_current_user_id)
 )-> MovieSearchResponse:
     return get_top_rated()
+
+
+@router.get("/movies/{movie_id}/providers")
+def watch_providers(
+    movie_id:int,
+    _:int=Depends(get_current_user_id)
+)->dict:
+    return get_watch_providers(movie_id)

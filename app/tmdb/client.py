@@ -97,3 +97,36 @@ def get_top_rated()-> MovieSearchResponse:
                     seen_ids.add(movie["id"])
                     results.append(movie)
     return MovieSearchResponse(results=results, total_results=len(results), total_pages=1)
+
+
+def get_watch_providers(movie_id: int) -> dict:
+    with httpx.Client() as client:
+        resp=client.get(
+            f"{BASE_URL}/movie/{movie_id}/watch/providers",
+            params={"api_key": settings.TMDB_API_KEY}
+        )
+        resp.raise_for_status()
+        return resp.json()
+    
+
+def discover_movies_by_genre(
+    genre_id: int,
+    page: int = 1,
+    sort_by: str = "release_date.desc",
+) -> MovieSearchResponse:
+    with httpx.Client() as client:
+        resp = client.get(
+            f"{BASE_URL}/discover/movie",
+            params={
+                "api_key": settings.TMDB_API_KEY,
+                "with_genres": genre_id,
+                "sort_by": sort_by,
+                "page": page,
+                "language": "pt-BR",
+                "include_adult": "false",
+                "vote_count.gte": 20,
+            },
+        )
+        resp.raise_for_status()
+        return MovieSearchResponse(**resp.json())
+    
