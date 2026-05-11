@@ -4,6 +4,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.encoders import jsonable_encoder
+
 from contextlib import asynccontextmanager
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
@@ -22,6 +23,10 @@ from app.auth.router import router as router_auth
 from app.tmdb.router import router as router_tmdb
 from app.reviews.router import router as router_reviews
 from app.watchlist.router import router as router_watchlist
+
+
+# Security
+from starlette.middleware.base import BaseHTTPMiddleware
 
 
 # _ LIFESPAN
@@ -66,6 +71,30 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request:Request, call_next):
+        response=await call_next(request)
+        response.headers["X-Content-Type-Options"]="nosniff"
+        response.headers["X-Frame-Options"]="DENY"
+        response.headers["X-XSS-Protection"]="1; mode=block"
+        response.headers["Referrer-Policy"]="strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"]="camera=(), microphone=(), geolocation=()"
+        return response
+
+
+@app.middleware("http")
+async def limit_body_size(request: Request, call_next):
+    content_length=request.headers.get("content-length")
+    if content_length and int(content_length) > 1_000_000:
+        return JSONResponse(
+            status_code=413,
+            content=build_error("payload_too_large", "Request body too large", request.url.path)
+        )
+    return await call_next(request)
+
+app.add_middleware(SecurityHeadersMiddleware)
 
 
 # _ Helper
