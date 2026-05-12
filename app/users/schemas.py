@@ -25,7 +25,7 @@ class UserBase(BaseModel):
     name: Annotated[str, StringConstraints(
         strip_whitespace=True
     )] = Field(..., min_length=2, max_length=50)
-    age: Optional[int] = Field(..., ge=16, le=100)
+    age: Optional[int] = Field(None, ge=16, le=100)
     email: EmailStr = Field(..., min_length=10, max_length=50)
     cpf: Optional[str] = Field(None, min_length=11, max_length=11)
     bio: Optional[str] = Field(None, max_length=200)
