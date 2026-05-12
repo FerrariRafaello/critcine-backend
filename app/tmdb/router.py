@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Query, Depends
 from app.tmdb.schemas import MovieResult, MovieSearchResponse
 from app.auth.security import get_current_user_id
-from app.tmdb.client import search_movies, get_movie, get_trending, get_now_playing, get_movie_credits, get_movie_videos, get_top_rated, get_watch_providers, discover_movies_by_genre, get_external_ids, get_for_you, get_classics
+from app.tmdb.client import search_movies, get_movie, get_trending, get_now_playing, get_movie_credits, get_movie_videos, get_top_rated, get_watch_providers, discover_movies_by_genre, get_external_ids, get_for_you, get_classics, get_animation
 
 
 
@@ -102,3 +102,10 @@ def classics(
     _:int=Depends(get_current_user_id)
 )-> MovieSearchResponse:
     return get_classics()
+
+
+@router.get("/animation", response_model=MovieSearchResponse)
+def animation(
+    _: int = Depends(get_current_user_id)
+) -> MovieSearchResponse:
+    return get_animation()

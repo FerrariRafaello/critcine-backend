@@ -195,3 +195,27 @@ def get_classics()->MovieSearchResponse:
                     seen_ids.add(movie["id"])
                     results.append(movie)
     return MovieSearchResponse(results=results[:35], total_results=len(results), total_pages=1)
+
+
+def get_animation() -> MovieSearchResponse:
+    results = []
+    seen_ids = set()
+    for page in range(1, 3):
+        with httpx.Client() as client:
+            resp = client.get(
+                f"{BASE_URL}/discover/movie",
+                params={
+                    "api_key": settings.TMDB_API_KEY,
+                    "language": "pt-BR",
+                    "with_genres": 16,
+                    "sort_by": "popularity.desc",
+                    "vote_count.gte": 100,
+                    "page": page
+                }
+            )
+            resp.raise_for_status()
+            for movie in resp.json()["results"]:
+                if movie["id"] not in seen_ids:
+                    seen_ids.add(movie["id"])
+                    results.append(movie)
+    return MovieSearchResponse(results=results[:35], total_results=len(results), total_pages=1)
