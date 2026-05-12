@@ -33,8 +33,8 @@ class UserDB:
     def create_user(
             self,
             name:str,
-            age:int,
             email:str,
+            age:Optional[int]=None,
             cpf:Optional[str]=None,
             hashed_password:str=''
     ) -> int:
@@ -95,8 +95,8 @@ class UserDB:
             self,
             user_id:int,
             name:str,
-            age:int,
             email:str,
+            age:Optional[int]=None,
             cpf:Optional[str]=None
     ) -> bool:
         try:
