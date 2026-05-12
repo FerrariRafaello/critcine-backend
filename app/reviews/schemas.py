@@ -7,12 +7,12 @@ from datetime import datetime
 class ReviewCreate(BaseModel):
     tmdb_movie_id:int
     rating:float=Field(..., ge=0, le=10)
-    comment:Optional[str]=None
+    comment:Optional[str]=Field(None, max_length=500)
 
 
 class ReviewUpdate(BaseModel):
     rating:Optional[float]=Field(None, ge=0, le=10)
-    comment:Optional[str]=None
+    comment:Optional[str]=Field(None, max_length=500)
 
 
 class ReviewOut(BaseModel):

@@ -29,6 +29,19 @@ def create_user(
     return service.create_user(user)
 
 
+# _ GET ME
+@router.get(
+    "/me",
+    response_model=UserOut,
+    status_code=status.HTTP_200_OK
+)
+def get_me(
+    service:UserService=Depends(get_user_service),
+    current_user_id:int=Depends(get_current_user_id)
+)->UserOut:
+    return service.get_user(current_user_id)
+
+
 # _ LIST
 @router.get(
     "",
