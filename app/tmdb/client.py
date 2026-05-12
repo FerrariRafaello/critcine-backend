@@ -151,6 +151,7 @@ def discover_movies_by_genre(
 def get_for_you(genres:str)-> MovieSearchResponse:
     results=[]
     seen_ids=set()
+    genres_ids = genres.replace(",", "|")
     for page in range(1,3):
         with httpx.Client() as client:
             resp=client.get(
@@ -158,7 +159,7 @@ def get_for_you(genres:str)-> MovieSearchResponse:
                 params={
                     "api_key": settings.TMDB_API_KEY,
                     "language": "pt-BR",
-                    "with_genres": genres,
+                    "with_genres": genres_ids,
                     "sort_by": "popularity.desc",
                     "vote_count.gte": 100,
                     "page": page 
