@@ -1,6 +1,8 @@
 # _ IMPORTS
+from typing import Optional
+
 from app.reviews.database import ReviewDB
-from app.reviews.schemas import ReviewCreate, ReviewUpdate, ReviewOut
+from app.reviews.schemas import ReviewCreate, ReviewUpdate, ReviewOut, ReviewOutFull
 from app.core.exceptions import DuplicateEntryError
 
 
@@ -75,3 +77,22 @@ class ReviewService:
         if result == "already_liked":
             raise ValueError("You already liked this review")
         return self.get_review(review_id, current_user_id=user_id)
+
+    def get_all_reviews(
+    self,
+    current_user_id: int,
+    sort: str = "newest",
+    search_user: Optional[str] = None,
+    search_movie: Optional[int] = None,
+    limit: int = 50,
+    offset: int = 0
+) -> list[ReviewOutFull]:
+        rows = self.db.get_all_reviews(
+            current_user_id=current_user_id,
+            sort=sort,
+            search_user=search_user,
+            search_movie=search_movie,
+            limit=limit,
+            offset=offset
+        )
+        return [ReviewOutFull(**row) for row in rows]

@@ -24,3 +24,6 @@ class ReviewOut(BaseModel):
     likes:int=0
     liked_by_me:bool=False
     created_at:datetime
+
+class ReviewOutFull(ReviewOut):
+    user_name: str

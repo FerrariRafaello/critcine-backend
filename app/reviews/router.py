@@ -1,7 +1,8 @@
 # _ IMPORTS
-from fastapi import APIRouter, Depends, Request, status
+from typing import Optional
+from fastapi import APIRouter, Depends, Request, status, Query
 
-from app.reviews.schemas import ReviewCreate, ReviewUpdate, ReviewOut
+from app.reviews.schemas import ReviewCreate, ReviewUpdate, ReviewOut, ReviewOutFull
 from app.reviews.service import ReviewService
 from app.auth.security import get_current_user_id
 
@@ -45,6 +46,25 @@ def get_reviews_by_user(
 )->list[ReviewOut]:
     return service.get_reviews_by_user(user_id)
 
+# _ GET all reviews (feed geral)
+@router.get("/feed", response_model=list[ReviewOutFull])
+def get_all_reviews(
+    sort: str = Query("newest", pattern="^(newest|oldest|popular)$"),
+    search_user: Optional[str] = Query(None),
+    search_movie: Optional[int] = Query(None),
+    limit: int = Query(50, ge=1, le=50),
+    offset: int = Query(0, ge=0),
+    service: ReviewService = Depends(get_review_service),
+    current_user_id: int = Depends(get_current_user_id)
+) -> list[ReviewOutFull]:
+    return service.get_all_reviews(
+        current_user_id=current_user_id,
+        sort=sort,
+        search_user=search_user,
+        search_movie=search_movie,
+        limit=limit,
+        offset=offset
+    )
 
 # _ PATCH
 @router.patch("/{review_id}", response_model=ReviewOut)

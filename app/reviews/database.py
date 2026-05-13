@@ -2,6 +2,7 @@
 from typing import Any, Optional, cast
 
 import psycopg
+from psycopg import sql
 from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
 
@@ -207,6 +208,57 @@ class ReviewDB:
                 (review_id,),
             )
             return "liked"
+
+    def get_all_reviews(
+    self,
+    current_user_id: int,
+    sort: str = "newest",
+    search_user: Optional[str] = None,
+    search_movie: Optional[int] = None,
+    limit: int = 50,
+    offset: int = 0
+) -> list[Any]:
+
+        order_col = {
+            "newest": sql.SQL("r.created_at DESC"),
+            "oldest": sql.SQL("r.created_at ASC"),
+            "popular": sql.SQL("r.likes DESC, r.created_at DESC"),
+        }.get(sort, sql.SQL("r.created_at DESC"))
+
+        filters = [sql.SQL("1=1")]
+        params: list[Any] = [current_user_id]
+
+        if search_movie is not None:
+            filters.append(sql.SQL("r.tmdb_movie_id = %s"))
+            params.append(search_movie)
+
+        if search_user:
+            filters.append(sql.SQL("u.name ILIKE %s"))
+            params.append(f"%{search_user}%")
+
+        params += [limit, offset]
+
+        query = sql.SQL("""
+            SELECT r.id, r.user_id, r.tmdb_movie_id, r.rating, r.comment, r.likes,
+                EXISTS (
+                    SELECT 1 FROM review_likes rl
+                    WHERE rl.review_id = r.id AND rl.user_id = %s
+                ) AS liked_by_me,
+                r.created_at,
+                u.name AS user_name
+            FROM reviews r
+            JOIN users u ON u.id = r.user_id
+            WHERE {where}
+            ORDER BY {order}
+            LIMIT %s OFFSET %s
+        """).format(
+            where=sql.SQL(" AND ").join(filters),
+            order=order_col
+        )
+
+        with self.pool.connection() as conn:
+            rows = conn.execute(query, params).fetchall()
+            return list(rows)
 
     def close_db_reviews(self)->None:
         self.pool.close()
