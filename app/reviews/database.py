@@ -233,8 +233,12 @@ class ReviewDB:
             params.append(search_movie)
 
         if search_user:
-            filters.append(sql.SQL("u.name ILIKE %s"))
-            params.append(f"%{search_user}%")
+            if search_user.isdigit():
+                filters.append(sql.SQL("r.user_id = %s"))
+                params.append(int(search_user))
+            else:
+                filters.append(sql.SQL("u.name ILIKE %s"))
+                params.append(f"%{search_user}%")
 
         params += [limit, offset]
 
