@@ -2,8 +2,7 @@
 from fastapi import APIRouter, Query, Depends
 from app.tmdb.schemas import MovieResult, MovieSearchResponse
 from app.auth.security import get_current_user_id
-from app.tmdb.client import search_movies, get_movie, get_trending, get_now_playing, get_movie_credits, get_movie_videos, get_top_rated, get_watch_providers, discover_movies_by_genre, get_external_ids, get_for_you, get_classics, get_animation
-
+from app.tmdb.client import search_movies, get_movie, get_trending, get_now_playing, get_movie_credits, get_movie_videos, get_top_rated, get_watch_providers, discover_movies_by_genre, get_external_ids, get_for_you, get_classics, get_animation, get_top10_today
 
 
 router=APIRouter(prefix="/v1/tmdb", tags=["TMDB"])
@@ -48,6 +47,13 @@ def now_playing(
     _: int = Depends(get_current_user_id)
 ) -> MovieSearchResponse:
     return get_now_playing()
+
+
+@router.get("/top10-today", response_model=MovieSearchResponse)
+def top10_today(
+    _:int=Depends(get_current_user_id)
+)->MovieSearchResponse:
+    return get_top10_today()
 
 
 @router.get("/movies/{movie_id}/credits")

@@ -219,3 +219,18 @@ def get_animation() -> MovieSearchResponse:
                     seen_ids.add(movie["id"])
                     results.append(movie)
     return MovieSearchResponse(results=results[:35], total_results=len(results), total_pages=1)
+
+
+def get_top10_today()->MovieSearchResponse:
+    with httpx.Client() as client:
+        resp=client.get(
+            f"{BASE_URL}/trending/movie/day",
+            params={
+                "api_key": settings.TMDB_API_KEY,
+                "language": "pt-BR",
+                "region": "BR"
+            }
+        )
+        resp.raise_for_status()
+        results=resp.json()["results"][:10]
+        return MovieSearchResponse(results=results, total_results=len(results), total_pages=1)
