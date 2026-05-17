@@ -246,7 +246,7 @@ def get_movies_by_provider(
             params={
                 "api_key": settings.TMDB_API_KEY,
                 "language": "pt-BR",
-                "watch_region": "pt-BR",
+                "watch_region": "BR",
                 "with_watch_providers": provider_id,
                 "sort_by": "popularity.desc",
                 "page": page,
