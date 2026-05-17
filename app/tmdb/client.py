@@ -234,3 +234,46 @@ def get_top10_today()->MovieSearchResponse:
         resp.raise_for_status()
         results=resp.json()["results"][:10]
         return MovieSearchResponse(results=results, total_results=len(results), total_pages=1)
+
+
+def get_movies_by_provider(
+        provider_id:int,
+        page: int=1
+)-> MovieSearchResponse:
+    with httpx.Client() as client:
+        resp=client.get(
+            f"{BASE_URL}/discover/movie",
+            params={
+                "api_key": settings.TMDB_API_KEY,
+                "language": "pt-BR",
+                "watch_region": "pt-BR",
+                "with_watch_providers": provider_id,
+                "sort_by": "popularity.desc",
+                "page": page,
+            }
+        )
+        resp.raise_for_status()
+        data=resp.json()
+        return MovieSearchResponse(
+            results=data["results"],
+            total_results=data["total_results"],
+            total_pages=data["total_pages"]
+        )
+
+
+def get_available_providers() -> list[dict]:
+    with httpx.Client() as client:
+        resp=client.get(
+            f"{BASE_URL}/watch/providers/movie",
+            params={
+                "api_key": settings.TMDB_API_KEY,
+                "language": "pt-br",
+                "watch_region": "BR"
+            }
+        )
+        resp.raise_for_status()
+        results=resp.json()["results"]
+
+        # Only the main ones
+        allowed = {8, 119, 337, 1899, 531, 350, 307}
+        return [p for p in results if p["provider_id"] in allowed]

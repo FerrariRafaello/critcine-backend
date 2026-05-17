@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Query, Depends
 from app.tmdb.schemas import MovieResult, MovieSearchResponse
 from app.auth.security import get_current_user_id
-from app.tmdb.client import search_movies, get_movie, get_trending, get_now_playing, get_movie_credits, get_movie_videos, get_top_rated, get_watch_providers, discover_movies_by_genre, get_external_ids, get_for_you, get_classics, get_animation, get_top10_today
+from app.tmdb.client import search_movies, get_movie, get_trending, get_now_playing, get_movie_credits, get_movie_videos, get_top_rated, get_watch_providers, discover_movies_by_genre, get_external_ids, get_for_you, get_classics, get_animation, get_top10_today, get_movies_by_provider, get_available_providers
 
 
 router=APIRouter(prefix="/v1/tmdb", tags=["TMDB"])
@@ -101,6 +101,20 @@ def for_you(
     _:int=Depends(get_current_user_id)
 )-> MovieSearchResponse:
     return get_for_you(genres)
+
+
+@router.get("/providers")
+def providers(_:int=Depends(get_current_user_id))->list:
+    return get_available_providers()
+
+
+@router.get("/providers/{provider_id}/movies", response_model=MovieSearchResponse)
+def movies_by_provider(
+    provider_id:int,
+    page:int=Query(1, ge=1),
+    _:int=Depends(get_current_user_id)
+)->MovieSearchResponse:
+    return get_movies_by_provider(provider_id, page)
 
 
 @router.get("/classics", response_model=MovieSearchResponse)
