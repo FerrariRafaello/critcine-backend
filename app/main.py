@@ -6,7 +6,7 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.encoders import jsonable_encoder
 
-# Logging estruturado
+# Logging
 from loguru import logger
 import sys
 
@@ -64,7 +64,7 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore
 
-# Configuração do loguru
+# Loguru config
 logger.remove()
 logger.add(sys.stdout, level="INFO", serialize=True)
 
@@ -127,13 +127,6 @@ app.include_router(router_auth)
 app.include_router(router_tmdb)
 app.include_router(router_reviews)
 app.include_router(router_watchlist)
-
-
-@auth_router.post("/login")
-@limiter.limit("5/minute")
-async def login_rate_limited(*args, **kwargs):
-    # ...chame a função de login original ou mova a lógica para cá...
-    pass
 
 
 # _ Health Check
