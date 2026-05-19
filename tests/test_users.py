@@ -20,68 +20,37 @@ def assert_error_contract(
 # __ CRUD Flow
 def test_crud_flow_users(client_users, auth_token):
     headers = {"Authorization": f"Bearer {auth_token}"}
-    payload = {
-        "name": "Isabella",
-        "age": 21,
-        "cpf": "18027797799",
-        "email": "isa@gmail.com",
-        "password":"senha123"
-    }
 
-    # Create
-    resp = client_users.post(
-        "/v1/users",
-        json=payload
-    )
-    assert resp.status_code == status.HTTP_201_CREATED
-
-    created = resp.json()
-    user_id = created["id"]
-    assert created["name"] == payload["name"]
-    assert created["cpf"] == payload["cpf"]
-    assert created["bio"] is None
-    assert created["avatar_id"] is None
-    assert created["cover_id"] is None
-    assert created["pronouns"] is None
-    assert created["favorite_genres"] is None
-    assert "id" in created
+    # Get the authenticated user's own ID
+    me_resp = client_users.get("/v1/users/me", headers=headers)
+    assert me_resp.status_code == status.HTTP_200_OK
+    user_id = me_resp.json()["id"]
 
     # List
-    resp = client_users.get(
-        "/v1/users",
-        headers=headers,
-    )
+    resp = client_users.get("/v1/users", headers=headers)
     assert resp.status_code == status.HTTP_200_OK
-    assert len(resp.json()) >=1
+    assert len(resp.json()) >= 1
 
     # Get
-    resp = client_users.get(
-        f"/v1/users/{user_id}",
-        headers=headers,
-    )
+    resp = client_users.get(f"/v1/users/{user_id}", headers=headers)
     assert resp.status_code == status.HTTP_200_OK
-
     data = resp.json()
-    assert data["name"] == payload["name"]
     assert data["id"] == user_id
 
-    # Update
+    # Update own user
     updated_json = {
         "name": "rafaello",
         "age": 22,
-        "cpf": "18027797799",
+        "cpf": "52998224725",
         "email": "rafa@gmail.com"
     }
-
     resp = client_users.put(
         f"/v1/users/{user_id}",
         json=updated_json,
         headers=headers,
     )
     assert resp.status_code == status.HTTP_200_OK
-
     updated = resp.json()
-    user_id = updated["id"]
     assert updated["name"] == updated_json["name"]
     assert updated["cpf"] == updated_json["cpf"]
     assert "id" in updated
@@ -94,30 +63,26 @@ def test_crud_flow_users(client_users, auth_token):
             "avatar_id": "cat",
             "cover_id": "sunset",
             "pronouns": "he/him",
-            "favorite_genres":"Action, Drama, Comedy"
+            "favorite_genres": "Action, Drama, Comedy"
         },
         headers=headers,
     )
     assert resp.status_code == status.HTTP_200_OK
-
     patched = resp.json()
     assert patched["bio"] == "I love movies!"
     assert patched["avatar_id"] == "cat"
     assert patched["cover_id"] == "sunset"
     assert patched["pronouns"] == "he/him"
-    assert patched["favorite_genres"] =="Action, Drama, Comedy"
+    assert patched["favorite_genres"] == "Action, Drama, Comedy"
     assert patched["id"] == user_id
 
     # Patch age - bio should persist
     resp = client_users.patch(
         f"/v1/users/{user_id}",
-        json={
-            "age": 25
-        },
+        json={"age": 25},
         headers=headers,
     )
     assert resp.status_code == status.HTTP_200_OK
-
     patched = resp.json()
     assert patched["age"] == 25
     assert patched["bio"] == "I love movies!"
@@ -125,15 +90,13 @@ def test_crud_flow_users(client_users, auth_token):
     assert patched["favorite_genres"] == "Action, Drama, Comedy"
     assert patched["id"] == user_id
 
-    # Delete
-    resp = client_users.delete(
-        f"/v1/users/{user_id}",
-        headers=headers,
-    )
+    # Delete own user
+    resp = client_users.delete(f"/v1/users/{user_id}", headers=headers)
     assert resp.status_code == status.HTTP_204_NO_CONTENT
 
 
 # __ NOT FOUND CASES
+# With ownership check, any user_id != current user returns 403 before 404
 def test_get_not_found(client_users, auth_token):
     headers = {"Authorization": f"Bearer {auth_token}"}
     resp = client_users.get("/v1/users/9999", headers=headers)
@@ -145,14 +108,14 @@ def test_update_not_found(client_users, auth_token):
     resp = client_users.put(
         "/v1/users/9999",
         json={
-        "name": "Isabella",
-        "age": 21,
-        "cpf": "18027797799",
-        "email": "isa@gmail.com"
-    },
+            "name": "Isabella",
+            "age": 21,
+            "cpf": "18027797799",
+            "email": "isa@gmail.com"
+        },
         headers=headers,
     )
-    assert resp.status_code == status.HTTP_404_NOT_FOUND
+    assert resp.status_code == status.HTTP_403_FORBIDDEN
 
 
 def test_patch_not_found(client_users, auth_token):
@@ -162,13 +125,13 @@ def test_patch_not_found(client_users, auth_token):
         json={"name": "Isabella"},
         headers=headers,
     )
-    assert_error_contract(resp, 404, "not_found", "/v1/users/9999")
+    assert_error_contract(resp, 403, "forbidden", "/v1/users/9999")
 
 
 def test_delete_not_found(client_users, auth_token):
     headers = {"Authorization": f"Bearer {auth_token}"}
     resp = client_users.delete("/v1/users/9999", headers=headers)
-    assert resp.status_code == status.HTTP_404_NOT_FOUND
+    assert resp.status_code == status.HTTP_403_FORBIDDEN
 
 
 def test_create_duplicate_cpf_conflict(client_users):
@@ -177,14 +140,14 @@ def test_create_duplicate_cpf_conflict(client_users):
         "age": 25,
         "cpf": "18027797799",
         "email": "ana1@gmail.com",
-        "password":"senha123"
+        "password": "Senha123"
     }
     payload2 = {
         "name": "Bia",
         "age": 26,
         "cpf": "18027797799",
         "email": "bia2@gmail.com",
-        "password":"senha123"
+        "password": "Senha123"
     }
     resp1 = client_users.post("/v1/users", json=payload1)
     assert resp1.status_code == 201
@@ -195,20 +158,11 @@ def test_create_duplicate_cpf_conflict(client_users):
 
 def test_cpf_raise_error(client_users, auth_token):
     headers = {"Authorization": f"Bearer {auth_token}"}
-    payload = {
-        "name": "Isabella",
-        "age": 21,
-        "cpf": "18027797799",
-        "email": "isa@gmail.com",
-        "password": "senha123",
-    }
 
-    resp = client_users.post(
-        "/v1/users",
-        json=payload
-    )
-    user_id = resp.json()["id"]
-    assert resp.status_code == status.HTTP_201_CREATED
+    # Patch the authenticated user's own profile with an invalid CPF
+    me_resp = client_users.get("/v1/users/me", headers=headers)
+    assert me_resp.status_code == status.HTTP_200_OK
+    user_id = me_resp.json()["id"]
 
     resp = client_users.patch(
         f"/v1/users/{user_id}",
@@ -220,9 +174,3 @@ def test_cpf_raise_error(client_users, auth_token):
     assert "details" in body["error"]
     assert isinstance(body["error"]["details"], list)
     assert len(body["error"]["details"]) > 0
-
-    resp_delete = client_users.delete(
-        f"/v1/users/{user_id}",
-        headers=headers,
-    )
-    assert resp_delete.status_code == status.HTTP_204_NO_CONTENT

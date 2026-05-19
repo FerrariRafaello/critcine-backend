@@ -183,12 +183,12 @@ def auth_token(client_auth):
         "age": 25,
         "cpf": "52998224725",
         "email": "token@gmail.com",
-        "password": "secret123"
+        "password": "Secret123"
     })
 
     resp=client_auth.post("/v1/auth/login", data={
         "username": "token@gmail.com",
-        "password": "secret123"
+        "password": "Secret123"
     })
 
     assert resp.status_code==200, (

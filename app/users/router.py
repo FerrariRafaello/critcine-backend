@@ -1,5 +1,9 @@
 # _ IMPORTS
-from fastapi import APIRouter, Query, Depends, Request, status
+import os
+from fastapi import APIRouter, Query, Depends, Request, status, HTTPException
+
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 from app.users.schemas import UserCreate, UserUpdate, UserPatch, UserOut
 from app.users.service import UserService
@@ -8,12 +12,25 @@ from app.auth.security import get_current_user_id
 
 # _ API Router
 router = APIRouter(prefix="/v1/users", tags=["Users"])
+limiter = Limiter(key_func=get_remote_address)
+
+
+def get_register_limit() -> str:
+    return "1000/minute" if os.getenv("TESTING") else "3/minute"
 
 
 # _ Dependency
-def get_user_service(request: Request)-> UserService:
+def get_user_service(request: Request) -> UserService:
     db = request.app.state.db_users
     return UserService(db)
+
+
+def _require_owner(current_user_id: int, user_id: int) -> None:
+    if current_user_id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cannot modify another user's profile"
+        )
 
 
 # _ POST
@@ -22,10 +39,12 @@ def get_user_service(request: Request)-> UserService:
     response_model=UserOut,
     status_code=status.HTTP_201_CREATED
 )
+@limiter.limit(get_register_limit)
 def create_user(
-    user:UserCreate,
-    service:UserService=Depends(get_user_service)
-)->UserOut:
+    request: Request,
+    user: UserCreate,
+    service: UserService = Depends(get_user_service)
+) -> UserOut:
     return service.create_user(user)
 
 
@@ -36,9 +55,9 @@ def create_user(
     status_code=status.HTTP_200_OK
 )
 def get_me(
-    service:UserService=Depends(get_user_service),
-    current_user_id:int=Depends(get_current_user_id)
-)->UserOut:
+    service: UserService = Depends(get_user_service),
+    current_user_id: int = Depends(get_current_user_id)
+) -> UserOut:
     return service.get_user(current_user_id)
 
 
@@ -49,11 +68,11 @@ def get_me(
     status_code=status.HTTP_200_OK
 )
 def list_users(
-    limit:int=Query(20, ge=1),
-    offset:int=Query(0, ge=0),
-    service:UserService=Depends(get_user_service),
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    service: UserService = Depends(get_user_service),
     _: int = Depends(get_current_user_id)
-)->list[UserOut]:
+) -> list[UserOut]:
     return service.list_users(limit=limit, offset=offset)
 
 
@@ -64,10 +83,10 @@ def list_users(
     status_code=status.HTTP_200_OK
 )
 def get_user(
-    user_id:int,
-    service:UserService=Depends(get_user_service),
+    user_id: int,
+    service: UserService = Depends(get_user_service),
     _: int = Depends(get_current_user_id)
-)-> UserOut:
+) -> UserOut:
     return service.get_user(user_id)
 
 
@@ -78,11 +97,12 @@ def get_user(
     status_code=status.HTTP_200_OK
 )
 def update_user(
-    user_id:int,
+    user_id: int,
     payload: UserUpdate,
-    service:UserService=Depends(get_user_service),
-    _: int = Depends(get_current_user_id)
-)->UserOut:
+    service: UserService = Depends(get_user_service),
+    current_user_id: int = Depends(get_current_user_id)
+) -> UserOut:
+    _require_owner(current_user_id, user_id)
     return service.update_user(user_id, payload)
 
 
@@ -93,11 +113,12 @@ def update_user(
     status_code=status.HTTP_200_OK
 )
 def patch_user(
-    user_id:int,
-    payload:UserPatch,
-    service:UserService=Depends(get_user_service),
-    _: int = Depends(get_current_user_id)
-)->UserOut:
+    user_id: int,
+    payload: UserPatch,
+    service: UserService = Depends(get_user_service),
+    current_user_id: int = Depends(get_current_user_id)
+) -> UserOut:
+    _require_owner(current_user_id, user_id)
     return service.patch_user(user_id, payload)
 
 
@@ -107,8 +128,9 @@ def patch_user(
     status_code=status.HTTP_204_NO_CONTENT
 )
 def delete_user(
-    user_id:int,
-    service:UserService=Depends(get_user_service),
-    _: int = Depends(get_current_user_id)
-)->None:
+    user_id: int,
+    service: UserService = Depends(get_user_service),
+    current_user_id: int = Depends(get_current_user_id)
+) -> None:
+    _require_owner(current_user_id, user_id)
     return service.delete_user(user_id)

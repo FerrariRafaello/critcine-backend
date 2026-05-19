@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field, StringConstraints, field_validator, Email
 from typing import Optional, Annotated
 
 from app.core.validators import validate_cpf_or_raise
+from app.core.sanitize import sanitize_text
 
 
 # _ Cpf mixin
@@ -14,10 +15,9 @@ class CpfValidatorMixin(BaseModel):
     def validate_cpf(cls, cpf):
         if cpf is None:
             return cpf
-        cpf=re.sub(r'\D', '', cpf)
+        cpf = re.sub(r'\D', '', cpf)
         validate_cpf_or_raise(cpf)
         return cpf
-
 
 
 # _ pydantic Classes
@@ -31,12 +31,35 @@ class UserBase(BaseModel):
     bio: Optional[str] = Field(None, max_length=200)
     avatar_id: Optional[str] = None
     cover_id: Optional[str] = None
-    pronouns: Optional[str]=Field(None, max_length=30)
-    favorite_genres: Optional[str]=Field(None, max_length=200)
+    pronouns: Optional[str] = Field(None, max_length=30)
+    favorite_genres: Optional[str] = Field(None, max_length=200)
+
+    @field_validator("bio", "pronouns", "favorite_genres", mode="before")
+    @classmethod
+    def sanitize_text_fields(cls, v):
+        return sanitize_text(v)
+
+    @field_validator("name", mode="before")
+    @classmethod
+    def sanitize_name(cls, v):
+        if v is None:
+            return v
+        return sanitize_text(v)
+
 
 class UserCreate(CpfValidatorMixin, UserBase):
-    password:str=Field(..., min_length=6)
-    pass
+    password: str = Field(..., min_length=8, max_length=128)
+
+    @field_validator("password")
+    @classmethod
+    def validate_password_strength(cls, v: str) -> str:
+        if not re.search(r'[A-Z]', v):
+            raise ValueError("Password must contain at least one uppercase letter")
+        if not re.search(r'[a-z]', v):
+            raise ValueError("Password must contain at least one lowercase letter")
+        if not re.search(r'\d', v):
+            raise ValueError("Password must contain at least one digit")
+        return v
 
 
 class UserUpdate(CpfValidatorMixin, UserBase):
@@ -44,19 +67,30 @@ class UserUpdate(CpfValidatorMixin, UserBase):
 
 
 class UserPatch(CpfValidatorMixin, BaseModel):
-    name:Optional[Annotated[str, StringConstraints(
+    name: Optional[Annotated[str, StringConstraints(
         strip_whitespace=True,
-    )]]=Field(None, min_length=2, max_length=50)
-    age:Optional[int]=Field(None, ge=16, le=100)
+    )]] = Field(None, min_length=2, max_length=50)
+    age: Optional[int] = Field(None, ge=16, le=100)
     email: Optional[EmailStr] = Field(None, min_length=10, max_length=50)
-    cpf:Optional[str]=Field(None, min_length=11, max_length=11)
+    cpf: Optional[str] = Field(None, min_length=11, max_length=11)
     bio: Optional[str] = Field(None, max_length=200)
     avatar_id: Optional[str] = None
     cover_id: Optional[str] = None
-    pronouns: Optional[str]=Field(None, max_length=30)
-    favorite_genres: Optional[str]=Field(None, max_length=200)
-    pass
+    pronouns: Optional[str] = Field(None, max_length=30)
+    favorite_genres: Optional[str] = Field(None, max_length=200)
+
+    @field_validator("bio", "pronouns", "favorite_genres", mode="before")
+    @classmethod
+    def sanitize_text_fields(cls, v):
+        return sanitize_text(v)
+
+    @field_validator("name", mode="before")
+    @classmethod
+    def sanitize_name(cls, v):
+        if v is None:
+            return v
+        return sanitize_text(v)
 
 
 class UserOut(UserBase):
-    id:int
+    id: int

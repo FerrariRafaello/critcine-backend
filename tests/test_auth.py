@@ -11,7 +11,7 @@ payload={
         "age": 21,
         "cpf": "18027797799",
         "email": "isa@gmail.com",
-        "password": "senha123"
+        "password": "Senha123"
     }
 
 
@@ -20,7 +20,7 @@ def test_login_success(client_auth):
 
     resp=client_auth.post("/v1/auth/login", data={
         "username":"isa@gmail.com",
-        "password":"senha123"
+        "password":"Senha123"
     })
     assert resp.status_code==status.HTTP_200_OK
     body=resp.json()
@@ -41,7 +41,7 @@ def test_login_wrong_password(client_auth):
 def test_login_user_not_found(client_auth):
     resp=client_auth.post("/v1/auth/login", data={
         "username":"wrong@gmail.com",
-        "password":"senha123"
+        "password":"Senha123"
     })
     assert resp.status_code==status.HTTP_401_UNAUTHORIZED
 

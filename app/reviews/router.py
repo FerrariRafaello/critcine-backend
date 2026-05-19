@@ -1,6 +1,10 @@
 # _ IMPORTS
+import os
 from typing import Optional
 from fastapi import APIRouter, Depends, Request, status, Query
+
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 from app.reviews.schemas import ReviewCreate, ReviewUpdate, ReviewOut, ReviewOutFull
 from app.reviews.service import ReviewService
@@ -8,18 +12,25 @@ from app.auth.security import get_current_user_id
 
 
 # _ Router
-router=APIRouter(prefix="/v1/reviews", tags=["Reviews"])
+router = APIRouter(prefix="/v1/reviews", tags=["Reviews"])
+limiter = Limiter(key_func=get_remote_address)
+
+
+def get_write_limit() -> str:
+    return "1000/minute" if os.getenv("TESTING") else "20/minute"
 
 
 # _ Dependency
-def get_review_service(request:Request)->ReviewService:
-    db=request.app.state.db_reviews
+def get_review_service(request: Request) -> ReviewService:
+    db = request.app.state.db_reviews
     return ReviewService(db)
 
 
 # _ POST
 @router.post("", response_model=ReviewOut, status_code=status.HTTP_201_CREATED)
+@limiter.limit(get_write_limit)
 def create_review(
+    request: Request,
     payload: ReviewCreate,
     service: ReviewService = Depends(get_review_service),
     current_user_id: int = Depends(get_current_user_id)
@@ -30,21 +41,22 @@ def create_review(
 # _ GET by movie
 @router.get("/movie/{tmdb_movie_id}", response_model=list[ReviewOut])
 def get_reviews(
-    tmdb_movie_id:int,
-    service:ReviewService=Depends(get_review_service),
-    current_user_id:int=Depends(get_current_user_id)
-)->list[ReviewOut]:
+    tmdb_movie_id: int,
+    service: ReviewService = Depends(get_review_service),
+    current_user_id: int = Depends(get_current_user_id)
+) -> list[ReviewOut]:
     return service.get_reviews_by_movie(tmdb_movie_id, current_user_id)
 
 
 # _ Get by user
 @router.get("/user/{user_id}", response_model=list[ReviewOut])
 def get_reviews_by_user(
-    user_id:int,
-    service:ReviewService=Depends(get_review_service),
-    _:int=Depends(get_current_user_id)
-)->list[ReviewOut]:
+    user_id: int,
+    service: ReviewService = Depends(get_review_service),
+    _: int = Depends(get_current_user_id)
+) -> list[ReviewOut]:
     return service.get_reviews_by_user(user_id)
+
 
 # _ GET all reviews (feed geral)
 @router.get("/feed", response_model=list[ReviewOutFull])
@@ -66,14 +78,17 @@ def get_all_reviews(
         offset=offset
     )
 
+
 # _ PATCH
 @router.patch("/{review_id}", response_model=ReviewOut)
+@limiter.limit(get_write_limit)
 def update_review(
-    review_id:int,
-    payload:ReviewUpdate,
-    service:ReviewService=Depends(get_review_service),
-    current_user_id:int=Depends(get_current_user_id)
-)->ReviewOut:
+    request: Request,
+    review_id: int,
+    payload: ReviewUpdate,
+    service: ReviewService = Depends(get_review_service),
+    current_user_id: int = Depends(get_current_user_id)
+) -> ReviewOut:
     return service.update_review(
         review_id=review_id,
         user_id=current_user_id,
@@ -84,17 +99,19 @@ def update_review(
 # _ DELETE
 @router.delete("/{review_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_review(
-    review_id:int,
-    service:ReviewService=Depends(get_review_service),
-    current_user_id:int=Depends(get_current_user_id)
-)->None:
+    review_id: int,
+    service: ReviewService = Depends(get_review_service),
+    current_user_id: int = Depends(get_current_user_id)
+) -> None:
     service.delete_review(review_id=review_id, user_id=current_user_id)
 
 
 @router.post("/{review_id}/like", response_model=ReviewOut)
+@limiter.limit(get_write_limit)
 def like_review(
-    review_id:int,
-    service:ReviewService=Depends(get_review_service),
-    current_user_id:int=Depends(get_current_user_id)
-)->ReviewOut:
+    request: Request,
+    review_id: int,
+    service: ReviewService = Depends(get_review_service),
+    current_user_id: int = Depends(get_current_user_id)
+) -> ReviewOut:
     return service.like_review(review_id, current_user_id)

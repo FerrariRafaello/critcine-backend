@@ -2,8 +2,8 @@ services:
   api:
     build:
       context: .
-      dockerfile: DOCKERFILE
-    container_name: cinelog_db
+      dockerfile: Dockerfile
+    container_name: cinelog_api
     environment:
       DATABASE_URL: postgresql://reviews_user:reviews_pass@postgres:5432/reviews_db
       TEST_DATABASE_URL: postgresql://reviews_user:reviews_pass@postgres:5432/reviews_db
@@ -12,24 +12,35 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - internal
+      - public
+    restart: unless-stopped
 
   postgres:
     image: postgres:16
-    container_name: reviews_db
+    container_name: cinelog_db
     environment:
       POSTGRES_DB: reviews_db
       POSTGRES_USER: reviews_user
       POSTGRES_PASSWORD: reviews_pass
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - cinelog_pgdata:/var/lib/postgresql/data
       - ./docker/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+    networks:
+      - internal
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U reviews_user -d reviews_db"]
       interval: 5s
       timeout: 5s
       retries: 10
+    restart: unless-stopped
+
+networks:
+  internal: {}
+  public: {}
 
 volumes:
   cinelog_pgdata:

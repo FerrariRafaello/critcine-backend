@@ -1,4 +1,5 @@
 # _ IMPORTS
+import uuid
 
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.exceptions import RequestValidationError
@@ -29,18 +30,17 @@ from app.tmdb.router import router as router_tmdb
 from app.reviews.router import router as router_reviews
 from app.watchlist.router import router as router_watchlist
 
-
 # Security
 from starlette.middleware.base import BaseHTTPMiddleware
 
 
 # _ LIFESPAN
 @asynccontextmanager
-async def lifespan(app:FastAPI):
-    app.state.db_movies=MovieDB()
-    app.state.db_users=UserDB()
-    app.state.db_reviews=ReviewDB()
-    app.state.db_watchlist=WatchlistDB()
+async def lifespan(app: FastAPI):
+    app.state.db_movies = MovieDB()
+    app.state.db_users = UserDB()
+    app.state.db_reviews = ReviewDB()
+    app.state.db_watchlist = WatchlistDB()
     try:
         yield
     finally:
@@ -54,7 +54,6 @@ limiter = Limiter(key_func=get_remote_address)
 
 
 # _ Main
-
 app = FastAPI(
     title="Cinelog API",
     version="2.0.0",
@@ -78,13 +77,12 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH"],
     allow_headers=["*"],
 )
 
 
-
-# Middleware para headers de segurança
+# _ Security Headers Middleware
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         response = await call_next(request)
@@ -97,26 +95,59 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         return response
 
 
+# _ Request ID Middleware
+class RequestIDMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        request_id = str(uuid.uuid4())
+        request.state.request_id = request_id
+        response = await call_next(request)
+        response.headers["X-Request-ID"] = request_id
+        return response
 
-# Middleware para limitar tamanho do payload (1MB)
+
+# _ Payload Size Middleware (1MB)
 @app.middleware("http")
 async def limit_body_size(request: Request, call_next):
     content_length = request.headers.get("content-length")
     if content_length and int(content_length) > 1_000_000:
-        logger.warning(f"Payload too large: {content_length} bytes at {request.url.path}")
+        ip = request.client.host if request.client else "unknown"
+        logger.warning("payload_too_large bytes={} path={} ip={}", content_length, request.url.path, ip)
         return JSONResponse(
             status_code=413,
             content=build_error("payload_too_large", "Request body too large", request.url.path)
         )
     return await call_next(request)
 
+
+# _ Honeypot Middleware
+_HONEYPOT_PATHS = {
+    "/admin", "/wp-login.php", "/wp-admin", "/.env",
+    "/phpMyAdmin", "/manager", "/.git/config", "/config.php",
+    "/backup", "/shell.php", "/api/v1/admin", "/console",
+}
+
+@app.middleware("http")
+async def honeypot(request: Request, call_next):
+    if request.url.path in _HONEYPOT_PATHS:
+        ip = request.client.host if request.client else "unknown"
+        logger.warning(
+            "honeypot_triggered path={} method={} ip={} user_agent={}",
+            request.url.path,
+            request.method,
+            ip,
+            request.headers.get("user-agent", "unknown")
+        )
+        return JSONResponse(status_code=404, content={"detail": "Not Found"})
+    return await call_next(request)
+
+
 app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(RequestIDMiddleware)
 
 
 # _ Helper
-def build_error(code:str, message:str, path:str):
-    return {"error": {"code":code, "message":message, "path":path}}
-
+def build_error(code: str, message: str, path: str):
+    return {"error": {"code": code, "message": message, "path": path}}
 
 
 # _ Including Routes
@@ -129,68 +160,62 @@ app.include_router(router_watchlist)
 
 
 # _ Health Check
-@app.get(
-    "/health"
-)
+@app.get("/health")
 def healthcheck():
-    return {"status":"ok"}
+    return {"status": "ok"}
 
 
 # _ Handler HTTPException
 @app.exception_handler(HTTPException)
-async def http_error_handler(request:Request, exc: HTTPException):
-    code="http_error"
-    message=str(exc.detail)
+async def http_error_handler(request: Request, exc: HTTPException):
+    code = "http_error"
+    message = str(exc.detail)
 
-    if exc.status_code == 404:
-        code="not_found"
+    if exc.status_code == 401:
+        code = "unauthorized"
+    elif exc.status_code == 403:
+        code = "forbidden"
+    elif exc.status_code == 404:
+        code = "not_found"
     elif exc.status_code == 409:
-        code="conflict"
+        code = "conflict"
     elif exc.status_code == 422:
-        code="validation_error"
+        code = "validation_error"
 
     return JSONResponse(
         status_code=exc.status_code,
-        content=build_error(
-            code,
-            message,
-            request.url.path
-        ),
+        content=build_error(code, message, request.url.path),
     )
 
 
 # _ Handler Validation Error
 @app.exception_handler(RequestValidationError)
-async def validation_error_handler(
-    request: Request,
-    exc: RequestValidationError
-):
+async def validation_error_handler(request: Request, exc: RequestValidationError):
     details = jsonable_encoder(
         exc.errors(),
         custom_encoder={Exception: lambda e: str(e)}
-        )
+    )
     return JSONResponse(
         status_code=422,
         content={
-        "error": {
-        "code": "validation_error",
-        "message": "Request validation failed",
-        "path": request.url.path,
-        "details": details
-                }
+            "error": {
+                "code": "validation_error",
+                "message": "Request validation failed",
+                "path": request.url.path,
+                "details": details
             }
-        )
+        }
+    )
 
 
 # _ Fallback
 @app.exception_handler(Exception)
-async def unhandled_error_handler(
-    request:Request,
-    exc:Exception
-):
+async def unhandled_error_handler(request: Request, exc: Exception):
+    request_id = getattr(request.state, "request_id", "unknown")
+    logger.exception("unhandled_error request_id={} path={}", request_id, request.url.path)
     return JSONResponse(
         status_code=500,
-        content=build_error("internal_error", "internal server error", request.url.path)
+        content=build_error("internal_error", "Internal server error", request.url.path)
     )
 
 
