@@ -77,6 +77,7 @@ logger.add(sys.stdout, level="INFO", serialize=True)
 origins = [
     "http://localhost:3000",
     "https://critcine-production-95d5.up.railway.app",
+    "https://cinelog-production-95d5.up.railway.app",
     "https://critcine.com",
     "https://www.critcine.com",
     "https://cinelog-frontend-production.up.railway.app",
