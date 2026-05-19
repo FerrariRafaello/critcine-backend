@@ -79,7 +79,11 @@ def test_db_reviews():
         kwargs={"row_factory": dict_row}
     ) as pool:
         with pool.connection() as conn:
-            conn.execute("TRUNCATE TABLE reviews RESTART IDENTITY;")
+            try:
+                conn.execute("TRUNCATE TABLE review_likes, reviews RESTART IDENTITY CASCADE;")
+            except Exception as e:
+                if "does not exist" not in str(e):
+                    raise
         yield ReviewDB(pool=pool) #type: ignore
 
 
