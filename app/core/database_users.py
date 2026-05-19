@@ -171,5 +171,26 @@ class UserDB:
             )
             return result.rowcount > 0
 
+    def get_token_version(self, user_id: int) -> int | None:
+        with self.pool.connection() as conn:
+            row = conn.execute(
+                "SELECT token_version FROM users WHERE id = %s",
+                (user_id,),
+            ).fetchone()
+            return cast(dict, row)["token_version"] if row else None
+
+    def increment_token_version(self, user_id: int) -> int:
+        with self.pool.connection() as conn:
+            row = conn.execute(
+                """
+                UPDATE users
+                SET token_version = token_version + 1
+                WHERE id = %s
+                RETURNING token_version
+                """,
+                (user_id,),
+            ).fetchone()
+            return cast(dict, row)["token_version"] if row else 0
+
     def close_db_users(self)->None:
         self.pool.close()

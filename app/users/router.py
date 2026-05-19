@@ -9,6 +9,7 @@ from app.users.schemas import UserCreate, UserUpdate, UserPatch, UserOut
 from app.users.service import UserService
 from app.follows.database import FollowDB
 from app.auth.security import get_current_user_id
+from app.core.ip_limits import check_registration_limit, record_registration
 
 
 # _ API Router
@@ -47,6 +48,17 @@ def create_user(
     user: UserCreate,
     service: UserService = Depends(get_user_service)
 ) -> UserOut:
+    if not os.getenv("TESTING"):
+        ip = get_remote_address(request)
+        blocked, hours_remaining = check_registration_limit(ip)
+        if blocked:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail=f"Account creation limit reached for this IP. Try again in {hours_remaining}h."
+            )
+        result = service.create_user(user)
+        record_registration(ip)
+        return result
     return service.create_user(user)
 
 
