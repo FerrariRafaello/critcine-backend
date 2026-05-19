@@ -18,3 +18,4 @@ pydantic-settings>=2.0.0
 slowapi>=0.1.9
 pytest-env>=1.0.0
 respx>=0.21.0
+loguru>=0.7.0

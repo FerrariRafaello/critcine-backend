@@ -1,9 +1,14 @@
 # _ IMPORTS
+
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.encoders import jsonable_encoder
+
+# Logging estruturado
+from loguru import logger
+import sys
 
 from contextlib import asynccontextmanager
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -45,20 +50,25 @@ async def lifespan(app:FastAPI):
         app.state.db_watchlist.close_db_watchlist()
 
 
-# _ Limiter
-limiter=Limiter(key_func=get_remote_address)
+limiter = Limiter(key_func=get_remote_address)
 
 
 # _ Main
-app=FastAPI(
+
+app = FastAPI(
     title="Cinelog API",
     version="2.0.0",
     lifespan=lifespan
 )
-app.state.limiter=limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler) #type: ignore
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore
 
-origins=[
+# Configuração do loguru
+logger.remove()
+logger.add(sys.stdout, level="INFO", serialize=True)
+
+
+origins = [
     "http://localhost:3000",
     "https://cinelog-production-95d5.up.railway.app",
     "https://cinelog-frontend-production.up.railway.app",
@@ -68,26 +78,32 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["*"],
 )
 
 
+
+# Middleware para headers de segurança
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request:Request, call_next):
-        response=await call_next(request)
-        response.headers["X-Content-Type-Options"]="nosniff"
-        response.headers["X-Frame-Options"]="DENY"
-        response.headers["X-XSS-Protection"]="1; mode=block"
-        response.headers["Referrer-Policy"]="strict-origin-when-cross-origin"
-        response.headers["Permissions-Policy"]="camera=(), microphone=(), geolocation=()"
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+        response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains; preload"
         return response
 
 
+
+# Middleware para limitar tamanho do payload (1MB)
 @app.middleware("http")
 async def limit_body_size(request: Request, call_next):
-    content_length=request.headers.get("content-length")
+    content_length = request.headers.get("content-length")
     if content_length and int(content_length) > 1_000_000:
+        logger.warning(f"Payload too large: {content_length} bytes at {request.url.path}")
         return JSONResponse(
             status_code=413,
             content=build_error("payload_too_large", "Request body too large", request.url.path)
@@ -102,6 +118,7 @@ def build_error(code:str, message:str, path:str):
     return {"error": {"code":code, "message":message, "path":path}}
 
 
+
 # _ Including Routes
 app.include_router(router_movies)
 app.include_router(router_users)
@@ -109,6 +126,16 @@ app.include_router(router_auth)
 app.include_router(router_tmdb)
 app.include_router(router_reviews)
 app.include_router(router_watchlist)
+
+# Exemplo de rate limiting em endpoint sensível (login)
+from app.auth.router import router as auth_router
+from slowapi.util import get_remote_address
+
+@auth_router.post("/login")
+@limiter.limit("5/minute")
+async def login_rate_limited(*args, **kwargs):
+    # ...chame a função de login original ou mova a lógica para cá...
+    pass
 
 
 # _ Health Check
