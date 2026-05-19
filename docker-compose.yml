@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: cinelog_api
+    container_name: critcine_api
     environment:
       DATABASE_URL: postgresql://reviews_user:reviews_pass@postgres:5432/reviews_db
       TEST_DATABASE_URL: postgresql://reviews_user:reviews_pass@postgres:5432/reviews_db
