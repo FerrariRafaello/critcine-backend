@@ -1,5 +1,8 @@
 # _ IMPORTS
 import httpx
+
+from typing import Optional
+
 from app.core.config import settings
 from app.tmdb.schemas import MovieResult, MovieSearchResponse
 
@@ -235,8 +238,6 @@ def get_top10_today()->MovieSearchResponse:
         results=resp.json()["results"][:10]
         return MovieSearchResponse(results=results, total_results=len(results), total_pages=1)
 
-
-from typing import Optional
 
 def get_movies_by_provider(
     provider_id: int,
