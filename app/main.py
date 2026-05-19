@@ -66,7 +66,7 @@ app = FastAPI(
     lifespan=lifespan
 )
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  #type: ignore
 
 # Loguru config
 logger.remove()
@@ -78,6 +78,8 @@ origins = [
     "http://localhost:3000",
     "https://critcine-production-95d5.up.railway.app",
     "https://critcine.com",
+    "https://www.critcine.com",
+    "https://cinelog-frontend-production.up.railway.app",
 ]
 
 app.add_middleware(
