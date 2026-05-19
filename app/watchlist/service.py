@@ -43,6 +43,7 @@ class WatchlistService:
         item=self.db.get_watchlist_item(item_id)
         if item is None:
             raise LookupError("Watchlist item not found")
+        # verify ownership before letting anyone update the status
         if item["user_id"] != user_id:
             raise PermissionError("Not allowed to edit this item")
 
@@ -58,6 +59,7 @@ class WatchlistService:
         item=self.db.get_watchlist_item(item_id)
         if item is None:
             raise LookupError("Watchlist item not found")
+        # verify ownership before allowing deletion
         if item["user_id"] != user_id:
             raise PermissionError("Not allowed to delete this item")
         self.db.delete_watchlist_item(item_id)

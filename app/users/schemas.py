@@ -1,4 +1,3 @@
-# _ IMPORTS
 import re
 
 from pydantic import BaseModel, Field, StringConstraints, field_validator, EmailStr
@@ -8,7 +7,6 @@ from app.core.validators import validate_cpf_or_raise
 from app.core.sanitize import sanitize_text
 
 
-# _ Cpf mixin
 class CpfValidatorMixin(BaseModel):
     @field_validator("cpf", mode="before", check_fields=False)
     @classmethod
@@ -20,11 +18,8 @@ class CpfValidatorMixin(BaseModel):
         return cpf
 
 
-# _ pydantic Classes
 class UserBase(BaseModel):
-    name: Annotated[str, StringConstraints(
-        strip_whitespace=True
-    )] = Field(..., min_length=2, max_length=50)
+    name: Annotated[str, StringConstraints(strip_whitespace=True)] = Field(..., min_length=2, max_length=50)
     age: Optional[int] = Field(None, ge=16, le=100)
     email: EmailStr = Field(..., min_length=10, max_length=50)
     cpf: Optional[str] = Field(None, min_length=11, max_length=11)
@@ -34,6 +29,7 @@ class UserBase(BaseModel):
     pronouns: Optional[str] = Field(None, max_length=30)
     favorite_genres: Optional[str] = Field(None, max_length=200)
 
+    # strip HTML from free-text fields before storing
     @field_validator("bio", "pronouns", "favorite_genres", mode="before")
     @classmethod
     def sanitize_text_fields(cls, v):
@@ -67,9 +63,7 @@ class UserUpdate(CpfValidatorMixin, UserBase):
 
 
 class UserPatch(CpfValidatorMixin, BaseModel):
-    name: Optional[Annotated[str, StringConstraints(
-        strip_whitespace=True,
-    )]] = Field(None, min_length=2, max_length=50)
+    name: Optional[Annotated[str, StringConstraints(strip_whitespace=True)]] = Field(None, min_length=2, max_length=50)
     age: Optional[int] = Field(None, ge=16, le=100)
     email: Optional[EmailStr] = Field(None, min_length=10, max_length=50)
     cpf: Optional[str] = Field(None, min_length=11, max_length=11)
@@ -94,6 +88,7 @@ class UserPatch(CpfValidatorMixin, BaseModel):
 
 class UserOut(UserBase):
     id: int
+    # follow stats populated by the router when fetching a specific user
     followers_count: int = 0
     following_count: int = 0
     is_following: bool = False

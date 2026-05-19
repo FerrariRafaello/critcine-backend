@@ -5,6 +5,7 @@ from datetime import datetime
 
 class WatchlistCreate(BaseModel):
     tmdb_movie_id:int
+    # default status when a user adds a movie without specifying one
     status:str ="want_to_watch"
 
 

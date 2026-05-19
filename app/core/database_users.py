@@ -15,6 +15,7 @@ class UserDB:
     def __init__(self,
                  db_url:str | None=None,
                  pool:ConnectionPool[Connection] | None=None):
+        # accept an external pool so tests can inject a shared test connection
         if pool is not None:
             self.pool=pool
         else:
@@ -126,6 +127,7 @@ class UserDB:
         pronouns: Optional[str]=None,
         favorite_genres: Optional[str]=None
 ) -> bool:
+        # fetch current values so None fields fall back to what's already stored
         current = self.get_user_by_id(user_id)
         if current is None:
             return False
@@ -172,6 +174,7 @@ class UserDB:
             return result.rowcount > 0
 
     def get_token_version(self, user_id: int) -> int | None:
+        # used on every request to check if the token is still the latest one
         with self.pool.connection() as conn:
             row = conn.execute(
                 "SELECT token_version FROM users WHERE id = %s",
@@ -180,6 +183,7 @@ class UserDB:
             return cast(dict, row)["token_version"] if row else None
 
     def increment_token_version(self, user_id: int) -> int:
+        # incrementing the version immediately invalidates all previous tokens
         with self.pool.connection() as conn:
             row = conn.execute(
                 """

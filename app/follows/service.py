@@ -7,6 +7,7 @@ class FollowService:
         self.db = db
 
     def follow(self, follower_id: int, followed_id: int) -> FollowStatsOut:
+        # self-follow is blocked at this layer so the DB check constraint is just a safety net
         if follower_id == followed_id:
             raise ValueError("Cannot follow yourself")
         self.db.follow(follower_id, followed_id)

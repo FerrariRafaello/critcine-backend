@@ -4,6 +4,7 @@ from typing import Annotated, Optional
 
 # _ pydantic Classes
 class MovieBase(BaseModel):
+    # name is letters-only — numbers and special chars belong in the title of the review, not here
     name:Annotated[str, StringConstraints(
         strip_whitespace=True,
         pattern=r'^[A-Za-z ]+$'

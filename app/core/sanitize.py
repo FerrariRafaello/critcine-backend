@@ -1,6 +1,8 @@
 import re
 
+# matches any HTML tag — used to strip user-supplied markup
 _HTML_TAG_RE = re.compile(r'<[^>]+>')
+# null bytes can bypass some validators
 _NULL_BYTE_RE = re.compile(r'\x00')
 
 

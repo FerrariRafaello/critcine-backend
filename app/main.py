@@ -39,6 +39,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 # _ LIFESPAN
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # open all connection pools once at startup so every request reuses them
     app.state.db_movies = MovieDB()
     app.state.db_users = UserDB()
     app.state.db_reviews = ReviewDB()
@@ -47,6 +48,7 @@ async def lifespan(app: FastAPI):
     try:
         yield
     finally:
+        # close pools gracefully so in-flight queries can finish
         app.state.db_movies.close_db_movies()
         app.state.db_users.close_db_users()
         app.state.db_reviews.close_db_reviews()
@@ -71,6 +73,7 @@ logger.remove()
 logger.add(sys.stdout, level="INFO", serialize=True)
 
 
+# only allow requests from our own frontend origins
 origins = [
     "http://localhost:3000",
     "https://cinelog-production-95d5.up.railway.app",
@@ -90,11 +93,13 @@ app.add_middleware(
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         response = await call_next(request)
+        # tell browsers not to sniff content types or allow framing
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+        # 2-year HSTS so browsers remember to use HTTPS
         response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains; preload"
         return response
 
@@ -102,6 +107,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 # _ Request ID Middleware
 class RequestIDMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
+        # attach a unique ID to every request so errors can be correlated in logs
         request_id = str(uuid.uuid4())
         request.state.request_id = request_id
         response = await call_next(request)
@@ -112,6 +118,7 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
 # _ Payload Size Middleware (1MB)
 @app.middleware("http")
 async def limit_body_size(request: Request, call_next):
+    # reject huge uploads early — we never need anything larger than 1 MB
     content_length = request.headers.get("content-length")
     if content_length and int(content_length) > 1_000_000:
         ip = request.client.host if request.client else "unknown"
@@ -124,6 +131,7 @@ async def limit_body_size(request: Request, call_next):
 
 
 # _ Honeypot Middleware
+# paths that only scanners and bots ever request — log and return 404
 _HONEYPOT_PATHS = {
     "/admin", "/wp-login.php", "/wp-admin", "/.env",
     "/phpMyAdmin", "/manager", "/.git/config", "/config.php",
@@ -216,6 +224,7 @@ async def validation_error_handler(request: Request, exc: RequestValidationError
 # _ Fallback
 @app.exception_handler(Exception)
 async def unhandled_error_handler(request: Request, exc: Exception):
+    # include request_id so we can find the full traceback in logs
     request_id = getattr(request.state, "request_id", "unknown")
     logger.exception("unhandled_error request_id={} path={}", request_id, request.url.path)
     return JSONResponse(

@@ -1,4 +1,3 @@
-# _ IMPORTS
 from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 from datetime import datetime
@@ -11,6 +10,7 @@ class ReviewCreate(BaseModel):
     rating: float = Field(..., ge=0, le=10)
     comment: Optional[str] = Field(None, max_length=500)
 
+    # strip HTML before storing to prevent XSS if the frontend ever renders raw text
     @field_validator("comment", mode="before")
     @classmethod
     def sanitize_comment(cls, v):
@@ -37,5 +37,7 @@ class ReviewOut(BaseModel):
     liked_by_me: bool = False
     created_at: datetime
 
+
 class ReviewOutFull(ReviewOut):
+    # extended version used in the feed — includes the author's name
     user_name: str

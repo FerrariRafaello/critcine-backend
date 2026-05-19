@@ -13,7 +13,7 @@ def get_follow_service(request: Request) -> FollowService:
     return FollowService(request.app.state.db_follows)
 
 
-# _ POST — seguir
+# _ POST — follow a user
 @router.post(
     "/{user_id}/follow",
     response_model=FollowStatsOut,
@@ -27,7 +27,7 @@ def follow_user(
     return service.follow(follower_id=current_user_id, followed_id=user_id)
 
 
-# _ DELETE — deixar de seguir
+# _ DELETE — unfollow a user
 @router.delete(
     "/{user_id}/follow",
     response_model=FollowStatsOut,
@@ -41,7 +41,7 @@ def unfollow_user(
     return service.unfollow(follower_id=current_user_id, followed_id=user_id)
 
 
-# _ GET — seguidores de um usuário
+# _ GET — list users who follow this user
 @router.get(
     "/{user_id}/followers",
     response_model=list[FollowUserOut]
@@ -54,7 +54,7 @@ def get_followers(
     return service.get_followers(user_id)
 
 
-# _ GET — quem um usuário segue
+# _ GET — list users this user follows
 @router.get(
     "/{user_id}/following",
     response_model=list[FollowUserOut]

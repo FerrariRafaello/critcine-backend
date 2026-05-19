@@ -7,7 +7,7 @@ from app.core.config import settings
 from app.tmdb.schemas import MovieResult, MovieSearchResponse
 
 
-BASE_URL="https://api.themoviedb.org/3"
+BASE_URL = "https://api.themoviedb.org/3"
 
 
 def search_movies(query:str, page:int=1)->MovieSearchResponse:
@@ -40,6 +40,7 @@ def get_movie(movie_id:int)->MovieResult:
 
 def get_trending()->MovieSearchResponse:
     results=[]
+    # seen_ids prevents duplicates when TMDB returns the same movie on multiple pages
     seen_ids=set()
     for page in range(1,3):
         with httpx.Client() as client:
@@ -281,6 +282,6 @@ def get_available_providers() -> list[dict]:
         resp.raise_for_status()
         results=resp.json()["results"]
 
-        # Only the main ones
+        # only return the main streaming services available in Brazil
         allowed = {8, 119, 337, 1899, 531, 350, 307}
         return [p for p in results if p["provider_id"] in allowed]

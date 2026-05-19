@@ -1,4 +1,3 @@
-# _ IMPORTS
 import os
 from typing import Optional
 from fastapi import APIRouter, Depends, Request, status, Query
@@ -11,7 +10,6 @@ from app.reviews.service import ReviewService
 from app.auth.security import get_current_user_id
 
 
-# _ Router
 router = APIRouter(prefix="/v1/reviews", tags=["Reviews"])
 limiter = Limiter(key_func=get_remote_address)
 
@@ -20,13 +18,11 @@ def get_write_limit() -> str:
     return "1000/minute" if os.getenv("TESTING") else "20/minute"
 
 
-# _ Dependency
 def get_review_service(request: Request) -> ReviewService:
     db = request.app.state.db_reviews
     return ReviewService(db)
 
 
-# _ POST
 @router.post("", response_model=ReviewOut, status_code=status.HTTP_201_CREATED)
 @limiter.limit(get_write_limit)
 def create_review(
@@ -38,7 +34,6 @@ def create_review(
     return service.create_review(user_id=current_user_id, payload=payload)
 
 
-# _ GET by movie
 @router.get("/movie/{tmdb_movie_id}", response_model=list[ReviewOut])
 def get_reviews(
     tmdb_movie_id: int,
@@ -48,7 +43,6 @@ def get_reviews(
     return service.get_reviews_by_movie(tmdb_movie_id, current_user_id)
 
 
-# _ Get by user
 @router.get("/user/{user_id}", response_model=list[ReviewOut])
 def get_reviews_by_user(
     user_id: int,
@@ -58,12 +52,12 @@ def get_reviews_by_user(
     return service.get_reviews_by_user(user_id)
 
 
-# _ GET all reviews (feed geral)
 @router.get("/feed", response_model=list[ReviewOutFull])
 def get_all_reviews(
     sort: str = Query("newest", pattern="^(newest|oldest|popular)$"),
     search_user: Optional[str] = Query(None),
     search_movie: Optional[int] = Query(None),
+    # when true, only shows reviews from users the current user follows
     following_only: bool = Query(False),
     limit: int = Query(50, ge=1, le=50),
     offset: int = Query(0, ge=0),
@@ -81,7 +75,6 @@ def get_all_reviews(
     )
 
 
-# _ PATCH
 @router.patch("/{review_id}", response_model=ReviewOut)
 @limiter.limit(get_write_limit)
 def update_review(
@@ -98,7 +91,6 @@ def update_review(
     )
 
 
-# _ DELETE
 @router.delete("/{review_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_review(
     review_id: int,

@@ -16,6 +16,7 @@ class MovieDB:
                  db_url: str | None = None,
                  pool: ConnectionPool[Connection] | None=None
                  ):
+        # accept an external pool so tests can inject a shared test connection
         if pool is not None:
             self.pool=pool
         else:
@@ -108,6 +109,7 @@ class MovieDB:
             year:Optional[int]=None,
             rating:Optional[float]=None,
     ) -> bool:
+        # fetch current values so None fields fall back to what's already stored
         current = self.get_movie_by_id(movie_id)
         if current is None:
             return False

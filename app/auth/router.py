@@ -1,7 +1,5 @@
-# _ IMPORTS
 import os
 from fastapi import APIRouter, Depends, Request, HTTPException, status
-
 from fastapi.security import OAuth2PasswordRequestForm
 from loguru import logger
 
@@ -18,7 +16,9 @@ limiter = Limiter(key_func=get_remote_address)
 
 
 def get_limit() -> str:
+    # high limit in test mode so fixtures don't get throttled
     return "1000/minute" if os.getenv("TESTING") else "5/minute"
+
 
 def get_auth_service(request: Request) -> AuthService:
     return AuthService(request.app.state.db_users)
@@ -33,6 +33,7 @@ def login(
 ):
     ip = get_remote_address(request)
 
+    # block IPs that hit the failed-attempt threshold
     blocked, remaining = check_brute_force(ip)
     if blocked:
         logger.warning("brute_force_blocked ip={} remaining_seconds={}", ip, remaining)

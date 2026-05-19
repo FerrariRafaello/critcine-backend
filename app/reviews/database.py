@@ -34,6 +34,8 @@ class ReviewDB:
         self._ensure_like_support()
 
     def _ensure_like_support(self)->None:
+        # creates the likes column and review_likes table if they don't exist yet
+        # done here rather than in a migration so the app self-heals on first boot
         with self.pool.connection() as conn:
             conn.execute(
                 """
@@ -186,6 +188,7 @@ class ReviewDB:
             if exists is None:
                 return "not_found"
 
+            # ON CONFLICT DO NOTHING lets us detect a double-like without raising an error
             inserted=conn.execute(
                 """
                 INSERT INTO review_likes (review_id, user_id)
@@ -226,6 +229,7 @@ class ReviewDB:
             "popular": sql.SQL("r.likes DESC, r.created_at DESC"),
         }.get(sort, sql.SQL("r.created_at DESC"))
 
+        # 1=1 is a no-op anchor that makes it safe to always append AND filters
         filters = [sql.SQL("1=1")]
         params: list[Any] = [current_user_id]
 

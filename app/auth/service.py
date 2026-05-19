@@ -15,7 +15,7 @@ class AuthService:
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid credentials"
             )
-        # Incrementar token_version invalida todos os tokens anteriores desse usuário
+        # bumping token_version invalidates any previously issued tokens for this user
         new_version = self.db.increment_token_version(user["id"])
         token = create_access_token(user["id"], version=new_version)
         return TokenOut(access_token=token)

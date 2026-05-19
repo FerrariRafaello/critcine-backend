@@ -46,6 +46,7 @@ class ReviewService:
         review =self.db.get_review_by_id(review_id)
         if review is None:
             raise LookupError("Review not found")
+        # only the review author can edit it
         if review["user_id"] != user_id:
             raise PermissionError("Not allowed to edit this review")
 
@@ -66,6 +67,7 @@ class ReviewService:
         review=self.db.get_review_by_id(review_id)
         if review is None:
             raise LookupError("Review not found")
+        # only the review author can delete it
         if review["user_id"] != user_id:
             raise PermissionError("Not allowed to delete this review")
         self.db.delete_review(review_id)

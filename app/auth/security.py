@@ -1,4 +1,3 @@
-# _ IMPORTS
 import os
 import jwt as pyjwt
 
@@ -34,6 +33,7 @@ def verify_password(plain: str, hashed: str) -> bool:
 
 def create_access_token(user_id: int, version: int = 0) -> str:
     expire = datetime.now(timezone.utc) + timedelta(minutes=EXPIRE_MIN)
+    # 'ver' field ties this token to the current session — incremented on every login
     return pyjwt.encode(
         {"sub": str(user_id), "exp": expire, "ver": version},
         SECRET_KEY,
@@ -59,8 +59,8 @@ def get_current_user_id(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Valida versão do token contra o banco — garante sessão única por usuário.
-    # Pulado em testes (usuários vivem em DB separado do app.state.db_users).
+    # compare token version against DB to enforce single active session per user
+    # skipped in tests because test users live in a separate DB from app.state.db_users
     if not os.getenv("TESTING") and request is not None:
         db = request.app.state.db_users
         current_ver = db.get_token_version(user_id)

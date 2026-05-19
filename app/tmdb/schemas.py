@@ -10,6 +10,7 @@ class MovieResult(BaseModel):
     id:int
     title:str
     overview:str
+    # these fields are not always present in TMDB responses
     release_date:Optional[str]=None
     poster_path:Optional[str]=None
     vote_average:float

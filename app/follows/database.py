@@ -25,7 +25,7 @@ class FollowDB:
             )
 
     def follow(self, follower_id: int, followed_id: int) -> bool:
-        """Segue um usuário. Retorna True se o follow foi criado, False se já existia."""
+        # ON CONFLICT DO NOTHING makes this idempotent — double-following is silently ignored
         with self.pool.connection() as conn:
             row = conn.execute(
                 """
@@ -39,7 +39,6 @@ class FollowDB:
             return row is not None
 
     def unfollow(self, follower_id: int, followed_id: int) -> bool:
-        """Deixa de seguir. Retorna True se existia e foi removido."""
         with self.pool.connection() as conn:
             result = conn.execute(
                 "DELETE FROM follows WHERE follower_id = %s AND followed_id = %s",
@@ -56,7 +55,6 @@ class FollowDB:
             return row is not None
 
     def get_followers(self, user_id: int) -> list[Any]:
-        """Retorna lista de usuários que seguem user_id."""
         with self.pool.connection() as conn:
             rows = conn.execute(
                 """
@@ -71,7 +69,6 @@ class FollowDB:
             return list(rows)
 
     def get_following(self, user_id: int) -> list[Any]:
-        """Retorna lista de usuários que user_id segue."""
         with self.pool.connection() as conn:
             rows = conn.execute(
                 """
@@ -86,7 +83,7 @@ class FollowDB:
             return list(rows)
 
     def get_stats(self, user_id: int, viewer_id: int | None = None) -> dict[str, Any]:
-        """Retorna contagens e se viewer segue user_id."""
+        # single query to get follower/following counts and whether the viewer already follows this user
         with self.pool.connection() as conn:
             row = conn.execute(
                 """

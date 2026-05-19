@@ -45,6 +45,7 @@ class UserService:
         if row is None:
             raise LookupError("User not found")
 
+        # follow_stats is fetched by the router and passed in to keep this layer decoupled from follow logic
         stats = follow_stats or {}
         return UserOut(
             id=row["id"],
@@ -71,6 +72,7 @@ class UserService:
         if current is None:
             raise LookupError("User not found")
 
+        # CPF is treated as an immutable identifier once set
         if payload.cpf is not None and payload.cpf != current["cpf"]:
             raise ValueError("CPF cannot be changed")
 
