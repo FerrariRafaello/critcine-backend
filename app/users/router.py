@@ -7,6 +7,7 @@ from slowapi.util import get_remote_address
 
 from app.users.schemas import UserCreate, UserUpdate, UserPatch, UserOut
 from app.users.service import UserService
+from app.follows.database import FollowDB
 from app.auth.security import get_current_user_id
 
 
@@ -19,11 +20,12 @@ def get_register_limit() -> str:
     return "1000/minute" if os.getenv("TESTING") else "3/minute"
 
 
-# _ Dependency
+# _ Dependencies
 def get_user_service(request: Request) -> UserService:
-    db = request.app.state.db_users
-    return UserService(db)
+    return UserService(request.app.state.db_users)
 
+def get_follow_db(request: Request) -> FollowDB:
+    return request.app.state.db_follows
 
 def _require_owner(current_user_id: int, user_id: int) -> None:
     if current_user_id != user_id:
@@ -56,9 +58,11 @@ def create_user(
 )
 def get_me(
     service: UserService = Depends(get_user_service),
+    follow_db: FollowDB = Depends(get_follow_db),
     current_user_id: int = Depends(get_current_user_id)
 ) -> UserOut:
-    return service.get_user(current_user_id)
+    stats = follow_db.get_stats(current_user_id, viewer_id=current_user_id)
+    return service.get_user(current_user_id, follow_stats=stats)
 
 
 # _ LIST
@@ -85,9 +89,11 @@ def list_users(
 def get_user(
     user_id: int,
     service: UserService = Depends(get_user_service),
-    _: int = Depends(get_current_user_id)
+    follow_db: FollowDB = Depends(get_follow_db),
+    current_user_id: int = Depends(get_current_user_id)
 ) -> UserOut:
-    return service.get_user(user_id)
+    stats = follow_db.get_stats(user_id, viewer_id=current_user_id)
+    return service.get_user(user_id, follow_stats=stats)
 
 
 # _ UPDATE
@@ -100,10 +106,13 @@ def update_user(
     user_id: int,
     payload: UserUpdate,
     service: UserService = Depends(get_user_service),
+    follow_db: FollowDB = Depends(get_follow_db),
     current_user_id: int = Depends(get_current_user_id)
 ) -> UserOut:
     _require_owner(current_user_id, user_id)
-    return service.update_user(user_id, payload)
+    service.update_user(user_id, payload)
+    stats = follow_db.get_stats(user_id, viewer_id=current_user_id)
+    return service.get_user(user_id, follow_stats=stats)
 
 
 # _ PATCH
@@ -116,10 +125,13 @@ def patch_user(
     user_id: int,
     payload: UserPatch,
     service: UserService = Depends(get_user_service),
+    follow_db: FollowDB = Depends(get_follow_db),
     current_user_id: int = Depends(get_current_user_id)
 ) -> UserOut:
     _require_owner(current_user_id, user_id)
-    return service.patch_user(user_id, payload)
+    service.patch_user(user_id, payload)
+    stats = follow_db.get_stats(user_id, viewer_id=current_user_id)
+    return service.get_user(user_id, follow_stats=stats)
 
 
 # _ DELETE

@@ -22,6 +22,7 @@ from app.core.database_movies import MovieDB
 from app.core.database_users import UserDB
 from app.reviews.database import ReviewDB
 from app.watchlist.database import WatchlistDB
+from app.follows.database import FollowDB
 
 # Services
 from app.movies.service import MovieService
@@ -30,14 +31,16 @@ from app.watchlist.service import WatchlistService
 
 # Routers
 from app.movies.router import get_movie_service
-from app.users.router import get_user_service
+from app.users.router import get_user_service, get_follow_db
 from app.reviews.router import get_review_service
 from app.watchlist.router import get_watchlist_service
+from app.follows.router import get_follow_service
 
 # Auth
 from app.auth.router import get_auth_service
 from app.auth.service import AuthService
 from app.reviews.service import ReviewService
+from app.follows.service import FollowService
 
 # Pool
 from psycopg_pool import ConnectionPool
@@ -118,8 +121,23 @@ def test_db_users():
         kwargs={"row_factory": dict_row}
     ) as pool:
         with pool.connection() as conn:
-            conn.execute("TRUNCATE TABLE reviews, users RESTART IDENTITY CASCADE;")
+            conn.execute("TRUNCATE TABLE follows, reviews, users RESTART IDENTITY CASCADE;")
         yield UserDB(pool=pool)#type: ignore
+
+
+@pytest.fixture(scope="function")
+def test_db_follows(test_db_users):
+    db_url = os.getenv("TEST_DATABASE_URL") or os.getenv("DATABASE_URL")
+    assert db_url, "DATABASE_URL is not configured"
+
+    with ConnectionPool(
+        db_url,
+        min_size=2,
+        max_size=10,
+        open=True,
+        kwargs={"row_factory": dict_row}
+    ) as pool:
+        yield FollowDB(pool=pool)  # type: ignore
 
 
 @pytest.fixture(scope="function")
@@ -137,11 +155,19 @@ def client_movie(test_db_movies):
 
 
 @pytest.fixture(scope="function")
-def client_users(test_db_users):
+def client_users(test_db_users, test_db_follows):
     def override_service():
         return UserService(test_db_users)
 
-    app.dependency_overrides[get_user_service]=override_service
+    def override_follow_db():
+        return test_db_follows
+
+    def override_follow_service():
+        return FollowService(test_db_follows)
+
+    app.dependency_overrides[get_user_service] = override_service
+    app.dependency_overrides[get_follow_db] = override_follow_db
+    app.dependency_overrides[get_follow_service] = override_follow_service
 
     try:
         with TestClient(app) as client:
@@ -151,7 +177,7 @@ def client_users(test_db_users):
 
 
 @pytest.fixture(scope="function")
-def client_auth(test_db_users, test_db_reviews, test_db_watchlist):
+def client_auth(test_db_users, test_db_reviews, test_db_watchlist, test_db_follows):
     def override_auth():
         return AuthService(test_db_users)
 
@@ -160,14 +186,22 @@ def client_auth(test_db_users, test_db_reviews, test_db_watchlist):
 
     def override_review_service():
         return ReviewService(test_db_reviews)
-    
+
     def override_watchlist_service():
         return WatchlistService(test_db_watchlist)
 
-    app.dependency_overrides[get_auth_service]=override_auth
-    app.dependency_overrides[get_user_service]=override_user_service
-    app.dependency_overrides[get_review_service]=override_review_service
-    app.dependency_overrides[get_watchlist_service]=override_watchlist_service
+    def override_follow_db():
+        return test_db_follows
+
+    def override_follow_service():
+        return FollowService(test_db_follows)
+
+    app.dependency_overrides[get_auth_service] = override_auth
+    app.dependency_overrides[get_user_service] = override_user_service
+    app.dependency_overrides[get_review_service] = override_review_service
+    app.dependency_overrides[get_watchlist_service] = override_watchlist_service
+    app.dependency_overrides[get_follow_db] = override_follow_db
+    app.dependency_overrides[get_follow_service] = override_follow_service
 
     try:
         with TestClient(app) as client:

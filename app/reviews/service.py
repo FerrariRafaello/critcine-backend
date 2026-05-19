@@ -79,19 +79,21 @@ class ReviewService:
         return self.get_review(review_id, current_user_id=user_id)
 
     def get_all_reviews(
-    self,
-    current_user_id: int,
-    sort: str = "newest",
-    search_user: Optional[str] = None,
-    search_movie: Optional[int] = None,
-    limit: int = 50,
-    offset: int = 0
-) -> list[ReviewOutFull]:
+        self,
+        current_user_id: int,
+        sort: str = "newest",
+        search_user: Optional[str] = None,
+        search_movie: Optional[int] = None,
+        following_only: bool = False,
+        limit: int = 50,
+        offset: int = 0
+    ) -> list[ReviewOutFull]:
         rows = self.db.get_all_reviews(
             current_user_id=current_user_id,
             sort=sort,
             search_user=search_user,
             search_movie=search_movie,
+            following_only=following_only,
             limit=limit,
             offset=offset
         )

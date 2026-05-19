@@ -94,3 +94,6 @@ class UserPatch(CpfValidatorMixin, BaseModel):
 
 class UserOut(UserBase):
     id: int
+    followers_count: int = 0
+    following_count: int = 0
+    is_following: bool = False

@@ -210,14 +210,15 @@ class ReviewDB:
             return "liked"
 
     def get_all_reviews(
-    self,
-    current_user_id: int,
-    sort: str = "newest",
-    search_user: Optional[str] = None,
-    search_movie: Optional[int] = None,
-    limit: int = 50,
-    offset: int = 0
-) -> list[Any]:
+        self,
+        current_user_id: int,
+        sort: str = "newest",
+        search_user: Optional[str] = None,
+        search_movie: Optional[int] = None,
+        following_only: bool = False,
+        limit: int = 50,
+        offset: int = 0
+    ) -> list[Any]:
 
         order_col = {
             "newest": sql.SQL("r.created_at DESC"),
@@ -227,6 +228,12 @@ class ReviewDB:
 
         filters = [sql.SQL("1=1")]
         params: list[Any] = [current_user_id]
+
+        if following_only:
+            filters.append(sql.SQL(
+                "r.user_id IN (SELECT followed_id FROM follows WHERE follower_id = %s)"
+            ))
+            params.append(current_user_id)
 
         if search_movie is not None:
             filters.append(sql.SQL("r.tmdb_movie_id = %s"))

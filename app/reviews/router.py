@@ -64,6 +64,7 @@ def get_all_reviews(
     sort: str = Query("newest", pattern="^(newest|oldest|popular)$"),
     search_user: Optional[str] = Query(None),
     search_movie: Optional[int] = Query(None),
+    following_only: bool = Query(False),
     limit: int = Query(50, ge=1, le=50),
     offset: int = Query(0, ge=0),
     service: ReviewService = Depends(get_review_service),
@@ -74,6 +75,7 @@ def get_all_reviews(
         sort=sort,
         search_user=search_user,
         search_movie=search_movie,
+        following_only=following_only,
         limit=limit,
         offset=offset
     )

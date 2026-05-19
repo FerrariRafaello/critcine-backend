@@ -23,10 +23,9 @@ class UserService:
         except DuplicateEntryError as exc:
             raise ValueError(str(exc))
 
-    def list_users(self, limit:int, offset:int) -> list[UserOut]:
+    def list_users(self, limit: int, offset: int) -> list[UserOut]:
         rows = self.db.list_users(limit=limit, offset=offset)
-
-        return[
+        return [
             UserOut(
                 id=row["id"],
                 name=row["name"],
@@ -37,15 +36,16 @@ class UserService:
                 pronouns=row["pronouns"],
                 favorite_genres=row["favorite_genres"],
                 avatar_id=row["avatar_id"],
-                cover_id=row["cover_id"]
+                cover_id=row["cover_id"],
             ) for row in rows
         ]
 
-    def get_user(self, user_id:int) -> UserOut:
+    def get_user(self, user_id: int, follow_stats: dict | None = None) -> UserOut:
         row = self.db.get_user_by_id(user_id)
         if row is None:
             raise LookupError("User not found")
 
+        stats = follow_stats or {}
         return UserOut(
             id=row["id"],
             name=row["name"],
@@ -56,7 +56,10 @@ class UserService:
             pronouns=row["pronouns"],
             favorite_genres=row["favorite_genres"],
             avatar_id=row["avatar_id"],
-            cover_id=row["cover_id"]
+            cover_id=row["cover_id"],
+            followers_count=stats.get("followers_count", 0),
+            following_count=stats.get("following_count", 0),
+            is_following=stats.get("is_following", False),
         )
 
     def update_user(
