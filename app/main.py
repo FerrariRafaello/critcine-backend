@@ -33,7 +33,6 @@ from app.watchlist.router import router as router_watchlist
 # Security
 from starlette.middleware.base import BaseHTTPMiddleware
 from app.auth.router import router as auth_router
-from slowapi.util import get_remote_address
 
 
 # _ LIFESPAN
