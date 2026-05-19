@@ -19,7 +19,7 @@ services:
 
   postgres:
     image: postgres:16
-    container_name: cinelog_db
+    container_name: critcine_db
     environment:
       POSTGRES_DB: reviews_db
       POSTGRES_USER: reviews_user
@@ -27,7 +27,7 @@ services:
     ports:
       - "127.0.0.1:5432:5432"
     volumes:
-      - cinelog_pgdata:/var/lib/postgresql/data
+      - critcine_pgdata:/var/lib/postgresql/data
       - ./docker/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
     networks:
       - internal
@@ -43,4 +43,4 @@ networks:
   public: {}
 
 volumes:
-  cinelog_pgdata:
+  critcine_pgdata:

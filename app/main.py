@@ -61,7 +61,7 @@ limiter = Limiter(key_func=get_remote_address)
 
 # _ Main
 app = FastAPI(
-    title="Cinelog API",
+    title="Critcine API",
     version="2.0.0",
     lifespan=lifespan
 )
@@ -77,10 +77,9 @@ logger.add(sys.stdout, level="INFO", serialize=True)
 origins = [
     "http://localhost:3000",
     "https://critcine-production-95d5.up.railway.app",
-    "https://cinelog-production-95d5.up.railway.app",
     "https://critcine.com",
     "https://www.critcine.com",
-    "https://cinelog-frontend-production.up.railway.app",
+    "https://critcine-frontend-production.up.railway.app",
 ]
 
 app.add_middleware(
