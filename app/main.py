@@ -76,8 +76,8 @@ logger.add(sys.stdout, level="INFO", serialize=True)
 # only allow requests from our own frontend origins
 origins = [
     "http://localhost:3000",
-    "https://cinelog-production-95d5.up.railway.app",
-    "https://cinelog-frontend-production.up.railway.app",
+    "https://critcine-production-95d5.up.railway.app",
+    "https://critcine.com",
 ]
 
 app.add_middleware(
