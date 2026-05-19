@@ -110,11 +110,12 @@ def providers(_:int=Depends(get_current_user_id))->list:
 
 @router.get("/providers/{provider_id}/movies", response_model=MovieSearchResponse)
 def movies_by_provider(
-    provider_id:int,
-    page:int=Query(1, ge=1),
-    _:int=Depends(get_current_user_id)
-)->MovieSearchResponse:
-    return get_movies_by_provider(provider_id, page)
+    provider_id: int,
+    page: int = Query(1, ge=1),
+    with_genres: int = Query(None, ge=1),
+    _: int = Depends(get_current_user_id)
+) -> MovieSearchResponse:
+    return get_movies_by_provider(provider_id, page, with_genres)
 
 
 @router.get("/classics", response_model=MovieSearchResponse)

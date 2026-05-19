@@ -236,24 +236,30 @@ def get_top10_today()->MovieSearchResponse:
         return MovieSearchResponse(results=results, total_results=len(results), total_pages=1)
 
 
+from typing import Optional
+
 def get_movies_by_provider(
-        provider_id:int,
-        page: int=1
-)-> MovieSearchResponse:
+    provider_id: int,
+    page: int = 1,
+    with_genres: Optional[int] = None
+) -> MovieSearchResponse:
+    params = {
+        "api_key": settings.TMDB_API_KEY,
+        "language": "pt-BR",
+        "watch_region": "BR",
+        "with_watch_providers": provider_id,
+        "sort_by": "popularity.desc",
+        "page": page,
+    }
+    if with_genres is not None:
+        params["with_genres"] = with_genres
     with httpx.Client() as client:
-        resp=client.get(
+        resp = client.get(
             f"{BASE_URL}/discover/movie",
-            params={
-                "api_key": settings.TMDB_API_KEY,
-                "language": "pt-BR",
-                "watch_region": "BR",
-                "with_watch_providers": provider_id,
-                "sort_by": "popularity.desc",
-                "page": page,
-            }
+            params=params
         )
         resp.raise_for_status()
-        data=resp.json()
+        data = resp.json()
         return MovieSearchResponse(
             results=data["results"],
             total_results=data["total_results"],
