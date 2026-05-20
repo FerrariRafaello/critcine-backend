@@ -212,6 +212,37 @@ class ReviewDB:
             )
             return "liked"
 
+    def unlike_review(self, review_id: int, user_id: int) -> str:
+        with self.pool.connection() as conn:
+            exists = conn.execute(
+                "SELECT 1 FROM reviews WHERE id = %s",
+                (review_id,),
+            ).fetchone()
+            if exists is None:
+                return "not_found"
+
+            deleted = conn.execute(
+                """
+                DELETE FROM review_likes
+                WHERE review_id = %s AND user_id = %s
+                RETURNING review_id
+                """,
+                (review_id, user_id),
+            ).fetchone()
+
+            if deleted is None:
+                return "not_liked"
+
+            conn.execute(
+                """
+                UPDATE reviews
+                SET likes = GREATEST(likes - 1, 0)
+                WHERE id = %s
+                """,
+                (review_id,),
+            )
+            return "unliked"
+
     def get_all_reviews(
         self,
         current_user_id: int,

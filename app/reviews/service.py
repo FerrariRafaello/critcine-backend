@@ -80,6 +80,14 @@ class ReviewService:
             raise ValueError("You already liked this review")
         return self.get_review(review_id, current_user_id=user_id)
 
+    def unlike_review(self, review_id: int, user_id: int) -> ReviewOut:
+        result = self.db.unlike_review(review_id, user_id)
+        if result == "not_found":
+            raise LookupError("Review not found")
+        if result == "not_liked":
+            raise ValueError("You have not liked this review")
+        return self.get_review(review_id, current_user_id=user_id)
+
     def get_all_reviews(
         self,
         current_user_id: int,

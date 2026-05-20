@@ -109,3 +109,14 @@ def like_review(
     current_user_id: int = Depends(get_current_user_id)
 ) -> ReviewOut:
     return service.like_review(review_id, current_user_id)
+
+
+@router.delete("/{review_id}/like", response_model=ReviewOut)
+@limiter.limit(get_write_limit)
+def unlike_review(
+    request: Request,
+    review_id: int,
+    service: ReviewService = Depends(get_review_service),
+    current_user_id: int = Depends(get_current_user_id)
+) -> ReviewOut:
+    return service.unlike_review(review_id, current_user_id)
