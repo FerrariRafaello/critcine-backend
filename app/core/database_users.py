@@ -98,17 +98,24 @@ class UserDB:
             name:str,
             email:str,
             age:Optional[int]=None,
-            cpf:Optional[str]=None
+            cpf:Optional[str]=None,
+            bio:Optional[str]=None,
+            pronouns:Optional[str]=None,
+            favorite_genres:Optional[str]=None,
+            avatar_id:Optional[str]=None,
+            cover_id:Optional[str]=None
     ) -> bool:
         try:
             with self.pool.connection() as conn:
                 result=conn.execute(
                     """
                     UPDATE users
-                    SET name=%s, age=%s, email=%s, cpf=%s
+                    SET name=%s, age=%s, email=%s, cpf=%s,
+                        bio=%s, pronouns=%s, favorite_genres=%s,
+                        avatar_id=%s, cover_id=%s
                     WHERE id=%s
                     """,
-                    (name, age, email, cpf, user_id),
+                    (name, age, email, cpf, bio, pronouns, favorite_genres, avatar_id, cover_id, user_id),
                 )
                 return result.rowcount > 0
         except psycopg.IntegrityError:

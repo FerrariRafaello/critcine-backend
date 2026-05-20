@@ -87,7 +87,7 @@ app.add_middleware(
     allow_origins=origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH"],
-    allow_headers=["*"],
+    allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
 )
 
 
@@ -138,6 +138,10 @@ _HONEYPOT_PATHS = {
     "/admin", "/wp-login.php", "/wp-admin", "/.env",
     "/phpMyAdmin", "/manager", "/.git/config", "/config.php",
     "/backup", "/shell.php", "/api/v1/admin", "/console",
+    "/actuator", "/actuator/env", "/actuator/health",
+    "/api/v1/env", "/.DS_Store", "/server-status",
+    "/telescope", "/horizon", "/laravel", "/login",
+    "/.well-known/security.txt",
 }
 
 @app.middleware("http")

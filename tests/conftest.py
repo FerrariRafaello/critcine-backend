@@ -94,7 +94,7 @@ def test_db_reviews():
 @pytest.fixture(scope="function")
 def test_db_watchlist():
     db_url=os.getenv("TEST_DATABASE_URL") or os.getenv("DATABASE_URL")
-    assert db_url, "DABATASE_URL is not configured"
+    assert db_url, "DATABASE_URL is not configured"
 
     with ConnectionPool(
         db_url,
@@ -230,6 +230,6 @@ def auth_token(client_auth):
     )
 
     token=resp.json().get("access_token")
-    assert token, "auth_token fixture: response has no acess_token"
+    assert token, "auth_token fixture: response has no access_token"
 
     return token

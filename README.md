@@ -1,4 +1,4 @@
-# Cinelog API
+# Critcine API
 
 A social movie review platform built with FastAPI. Users can create accounts, write reviews, like each other's posts, follow other users, build a watchlist, and browse a personalised feed powered by The Movie Database (TMDB).
 
@@ -10,7 +10,7 @@ A social movie review platform built with FastAPI. Users can create accounts, wr
 - **User profiles** — name, bio, pronouns, favourite genres, avatar/cover image, CPF validation
 - **Reviews** — rate movies 0–10, leave a comment, like reviews
 - **Feed** — global review feed with sort (newest / oldest / popular), search by user or movie, and a *Following only* filter
-- **Watchlist** — track movies as *want to watch*, *watching*, or *watched*
+- **Watchlist** — track movies as *want to watch*, *watching*, *watched*, or *dropped*
 - **Follow system** — follow / unfollow users, see their follower/following counts
 - **TMDB integration** — search, trending, now playing, top rated, discover by genre, streaming providers, trailers, cast
 
@@ -38,7 +38,7 @@ A social movie review platform built with FastAPI. Users can create accounts, wr
 ## Project Structure
 
 ```
-cinelog/
+critcine-backend/
 ├── app/
 │   ├── auth/          # login, JWT creation and validation
 │   ├── core/          # config, DB pools, brute-force, sanitisation, validators
@@ -70,8 +70,8 @@ cinelog/
 
 ```bash
 # 1. Clone and enter the project
-git clone https://github.com/FerrariRafaello/cinelog.git
-cd cinelog
+git clone https://github.com/FerrariRafaello/critcine-backend.git
+cd critcine-backend
 
 # 2. Create and activate a virtual environment
 python -m venv venv
@@ -111,7 +111,7 @@ Create a `.env` file in the project root. **Never commit this file.**
 
 | Variable | Required | Description |
 |---|---|---|
-| `DATABASE_URL` | Yes | PostgreSQL connection string, e.g. `postgresql://user:pass@localhost:5432/cinelog` |
+| `DATABASE_URL` | Yes | PostgreSQL connection string, e.g. `postgresql://user:pass@localhost:5432/critcine` |
 | `JWT_SECRET` | Yes | Long random string used to sign tokens |
 | `TMDB_API_KEY` | Yes | API key from themoviedb.org |
 | `JWT_ALGORITHM` | No | Defaults to `HS256` |
@@ -203,7 +203,6 @@ All endpoints (except `POST /v1/users` and `POST /v1/auth/login`) require a Bear
 | `GET` | `/v1/tmdb/movies/{movie_id}/credits` | Cast and crew |
 | `GET` | `/v1/tmdb/movies/{movie_id}/videos` | Trailers and clips |
 | `GET` | `/v1/tmdb/movies/{movie_id}/providers` | Where to watch |
-| `GET` | `/v1/tmdb/movies/{movie_id}/external-ids` | IMDb ID and others |
 
 ### Health
 
@@ -231,6 +230,7 @@ All endpoints (except `POST /v1/users` and `POST /v1/auth/login`) require a Bear
 | Request ID | Every request gets a UUID in `X-Request-ID` for log correlation |
 | CORS | Restricted to known frontend origins |
 | Docker network isolation | PostgreSQL is only reachable from within the internal Docker network |
+| HTTP timeouts | All outbound TMDB requests have a 10-second timeout to prevent thread hang |
 
 ---
 
@@ -238,7 +238,7 @@ All endpoints (except `POST /v1/users` and `POST /v1/auth/login`) require a Bear
 
 ```bash
 # Make sure the test database exists and migrations are up to date
-DATABASE_URL=postgresql://reviews_user:reviews_pass@localhost:5432/reviews_db_test \
+DATABASE_URL=postgresql://user:pass@localhost:5432/critcine_test \
   python -m alembic upgrade head
 
 # Run the full test suite
@@ -251,7 +251,7 @@ The `TESTING=1` flag disables brute-force lockouts, IP registration limits, toke
 
 ## CPF Validation
 
-The CPF (Cadastro de Pessoas Físicas) is the Brazilian individual taxpayer number. This project implements the full digit-verification algorithm from scratch to demonstrate it to recruiters. The field is **optional** — users without a CPF can still register.
+The CPF (Cadastro de Pessoas Físicas) is the Brazilian individual taxpayer number. This project implements the full digit-verification algorithm from scratch. The field is **optional** — users without a CPF can still register.
 
 ---
 

@@ -8,10 +8,11 @@ from app.tmdb.schemas import MovieResult, MovieSearchResponse
 
 
 BASE_URL = "https://api.themoviedb.org/3"
+_TIMEOUT = 10.0
 
 
 def search_movies(query:str, page:int=1)->MovieSearchResponse:
-    with httpx.Client() as client:
+    with httpx.Client(timeout=_TIMEOUT) as client:
         resp=client.get(
             f"{BASE_URL}/search/movie",
             params={
@@ -26,7 +27,7 @@ def search_movies(query:str, page:int=1)->MovieSearchResponse:
 
 
 def get_movie(movie_id:int)->MovieResult:
-    with httpx.Client() as client:
+    with httpx.Client(timeout=_TIMEOUT) as client:
         resp=client.get(
             f"{BASE_URL}/movie/{movie_id}",
             params={
@@ -43,7 +44,7 @@ def get_trending()->MovieSearchResponse:
     # seen_ids prevents duplicates when TMDB returns the same movie on multiple pages
     seen_ids=set()
     for page in range(1,3):
-        with httpx.Client() as client:
+        with httpx.Client(timeout=_TIMEOUT) as client:
             resp=client.get(
                 f"{BASE_URL}/trending/movie/week",
                 params={"api_key": settings.TMDB_API_KEY, "language": "pt-br", "page": page}
@@ -60,7 +61,7 @@ def get_now_playing()->MovieSearchResponse:
     results=[]
     seen_ids=set()
     for page in range(1,3):
-        with httpx.Client() as client:
+        with httpx.Client(timeout=_TIMEOUT) as client:
             resp =client.get(
                 f"{BASE_URL}/movie/now_playing",
                 params={"api_key":settings.TMDB_API_KEY, "language":"pt-br", "page":page}
@@ -74,7 +75,7 @@ def get_now_playing()->MovieSearchResponse:
 
 
 def get_movie_credits(movie_id:int)->dict:
-    with httpx.Client() as client:
+    with httpx.Client(timeout=_TIMEOUT) as client:
         resp=client.get(
             f"{BASE_URL}/movie/{movie_id}/credits",
             params={"api_key":settings.TMDB_API_KEY, "language":"pt-br"}
@@ -84,7 +85,7 @@ def get_movie_credits(movie_id:int)->dict:
 
 
 def get_movie_videos(movie_id:int)->dict:
-    with httpx.Client() as client:
+    with httpx.Client(timeout=_TIMEOUT) as client:
         resp=client.get(
             f"{BASE_URL}/movie/{movie_id}/videos",
             params={"api_key": settings.TMDB_API_KEY, "language":"pt-br"}
@@ -97,7 +98,7 @@ def get_top_rated()-> MovieSearchResponse:
     results=[]
     seen_ids=set()
     for page in range(1,3):
-        with httpx.Client() as client:
+        with httpx.Client(timeout=_TIMEOUT) as client:
             resp=client.get(
                 f"{BASE_URL}/movie/top_rated",
                 params={"api_key": settings.TMDB_API_KEY, "language": "pt-BR", "page": page}
@@ -111,7 +112,7 @@ def get_top_rated()-> MovieSearchResponse:
 
 
 def get_watch_providers(movie_id: int) -> dict:
-    with httpx.Client() as client:
+    with httpx.Client(timeout=_TIMEOUT) as client:
         resp=client.get(
             f"{BASE_URL}/movie/{movie_id}/watch/providers",
             params={"api_key": settings.TMDB_API_KEY}
@@ -120,22 +121,12 @@ def get_watch_providers(movie_id: int) -> dict:
         return resp.json()
 
 
-def get_external_ids(movie_id: int) -> dict:
-    with httpx.Client() as client:
-        resp = client.get(
-            f"{BASE_URL}/movie/{movie_id}/external_ids",
-            params={"api_key": settings.TMDB_API_KEY}
-        )
-        resp.raise_for_status()
-        return resp.json()
-    
-
 def discover_movies_by_genre(
     genre_id: int,
     page: int = 1,
     sort_by: str = "release_date.desc",
 ) -> MovieSearchResponse:
-    with httpx.Client() as client:
+    with httpx.Client(timeout=_TIMEOUT) as client:
         resp = client.get(
             f"{BASE_URL}/discover/movie",
             params={
@@ -157,7 +148,7 @@ def get_for_you(genres:str)-> MovieSearchResponse:
     seen_ids=set()
     genres_ids = genres.replace(",", "|")
     for page in range(1,3):
-        with httpx.Client() as client:
+        with httpx.Client(timeout=_TIMEOUT) as client:
             resp=client.get(
                 f"{BASE_URL}/discover/movie",
                 params={
@@ -181,7 +172,7 @@ def get_classics()->MovieSearchResponse:
     results=[]
     seen_ids=set()
     for page in range(1,3):
-        with httpx.Client() as client:
+        with httpx.Client(timeout=_TIMEOUT) as client:
             resp=client.get(
                 f"{BASE_URL}/discover/movie",
                 params={
@@ -205,7 +196,7 @@ def get_animation() -> MovieSearchResponse:
     results = []
     seen_ids = set()
     for page in range(1, 3):
-        with httpx.Client() as client:
+        with httpx.Client(timeout=_TIMEOUT) as client:
             resp = client.get(
                 f"{BASE_URL}/discover/movie",
                 params={
@@ -226,7 +217,7 @@ def get_animation() -> MovieSearchResponse:
 
 
 def get_top10_today()->MovieSearchResponse:
-    with httpx.Client() as client:
+    with httpx.Client(timeout=_TIMEOUT) as client:
         resp=client.get(
             f"{BASE_URL}/trending/movie/day",
             params={
@@ -255,7 +246,7 @@ def get_movies_by_provider(
     }
     if with_genres is not None:
         params["with_genres"] = with_genres
-    with httpx.Client() as client:
+    with httpx.Client(timeout=_TIMEOUT) as client:
         resp = client.get(
             f"{BASE_URL}/discover/movie",
             params=params
@@ -270,7 +261,7 @@ def get_movies_by_provider(
 
 
 def get_available_providers() -> list[dict]:
-    with httpx.Client() as client:
+    with httpx.Client(timeout=_TIMEOUT) as client:
         resp=client.get(
             f"{BASE_URL}/watch/providers/movie",
             params={

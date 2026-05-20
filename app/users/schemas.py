@@ -92,3 +92,16 @@ class UserOut(UserBase):
     followers_count: int = 0
     following_count: int = 0
     is_following: bool = False
+
+
+class UserPublicOut(BaseModel):
+    """Returned by list endpoints — omits email and CPF to protect user privacy."""
+    id: int
+    name: str
+    bio: Optional[str] = None
+    pronouns: Optional[str] = None
+    favorite_genres: Optional[str] = None
+    avatar_id: Optional[str] = None
+    cover_id: Optional[str] = None
+    followers_count: int = 0
+    following_count: int = 0

@@ -45,7 +45,7 @@ jobs:
 
     env:
       DATABASE_URL: postgresql://reviews_user:reviews_pass@localhost:5432/reviews_db
-      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      JWT_SECRET: "ci-test-secret-not-for-production-aabbccddeeff00112233445566778899"
       JWT_ALGORITHM: HS256
       JWT_EXPIRE_MINUTES: 60
 

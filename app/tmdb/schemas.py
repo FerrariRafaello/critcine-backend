@@ -16,7 +16,6 @@ class MovieResult(BaseModel):
     vote_average:float
     genres: Optional[list[Genre]]=None
     runtime:Optional[int]=None
-    imdb_id:Optional[str]=None
 
 
 class MovieSearchResponse(BaseModel):

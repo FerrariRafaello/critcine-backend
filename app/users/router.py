@@ -4,7 +4,7 @@ from fastapi import APIRouter, Query, Depends, Request, status, HTTPException
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
-from app.users.schemas import UserCreate, UserUpdate, UserPatch, UserOut
+from app.users.schemas import UserCreate, UserUpdate, UserPatch, UserOut, UserPublicOut
 from app.users.service import UserService
 from app.follows.database import FollowDB
 from app.auth.security import get_current_user_id
@@ -67,7 +67,7 @@ def get_me(
     return service.get_user(current_user_id, follow_stats=stats)
 
 
-@router.get("", response_model=list[UserOut], status_code=status.HTTP_200_OK)
+@router.get("", response_model=list[UserPublicOut], status_code=status.HTTP_200_OK)
 def list_users(
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),

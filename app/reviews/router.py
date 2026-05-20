@@ -55,7 +55,7 @@ def get_reviews_by_user(
 @router.get("/feed", response_model=list[ReviewOutFull])
 def get_all_reviews(
     sort: str = Query("newest", pattern="^(newest|oldest|popular)$"),
-    search_user: Optional[str] = Query(None),
+    search_user: Optional[str] = Query(None, max_length=100),
     search_movie: Optional[int] = Query(None),
     # when true, only shows reviews from users the current user follows
     following_only: bool = Query(False),

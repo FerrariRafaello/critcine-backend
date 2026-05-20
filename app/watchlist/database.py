@@ -23,7 +23,7 @@ class WatchlistDB:
         else:
             self.db_url=db_url or settings.DATABASE_URL
             if not self.db_url:
-                raise RuntimeError("DATABASE_URL it not configured")
+                raise RuntimeError("DATABASE_URL is not configured")
             self.pool=ConnectionPool(
                 self.db_url,
                 min_size=2,

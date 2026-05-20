@@ -2,8 +2,8 @@ venv
 pycache
 .pytest_cache
 .env
-app/core/movies.db
-app/core/users.db
+# app/core/movies.db
+# app/core/users.db
 .pytest_output.txt
 __pycache__/
 *.pyc
