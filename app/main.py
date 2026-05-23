@@ -1,4 +1,5 @@
 # _ IMPORTS
+import re
 import uuid
 
 from fastapi import FastAPI, Request, HTTPException
@@ -184,44 +185,47 @@ def healthcheck():
     return {"status": "ok"}
 
 
-# _ Handler HTTPException
-@app.exception_handler(HTTPException)
-async def http_error_handler(request: Request, exc: HTTPException):
-    code = "http_error"
-    message = str(exc.detail)
+_PYDANTIC_TO_PT: dict[str, str] = {
+        "Field required": "Campo obrigatório",
+        "value is not a valid email address": "E-mail inválido",
+        "String should have at least 2 characters": "Mínimo de 2 caracteres",
+        "String should have at most 50 characters": "Máximo de 50 caracteres",
+        "String should have at least 8 characters": "Mínimo de 8 caracteres",
+        "String should have at most 128 characters": "Máximo de 128 caracteres",
+        "Input should be a valid integer": "Deve ser um número inteiro",
+        "Input should be greater than or equal to 16": "Idade mínima: 16 anos",
+        "Input should be less than or equal to 100": "Idade máxima: 100 anos",
+        "Password must contain at least one uppercase letter": "Senha precisa ter ao menos uma letra maiúscula",
+        "Password must contain at least one lowercase letter": "Senha precisa ter ao menos uma letra minúscula",
+        "Password must contain at least one digit": "Senha precisa ter ao menos um número",
+        "CPF inválido": "CPF inválido",
+    }
 
-    if exc.status_code == 401:
-        code = "unauthorized"
-    elif exc.status_code == 403:
-        code = "forbidden"
-    elif exc.status_code == 404:
-        code = "not_found"
-    elif exc.status_code == 409:
-        code = "conflict"
-    elif exc.status_code == 422:
-        code = "validation_error"
 
-    return JSONResponse(
-        status_code=exc.status_code,
-        content=build_error(code, message, request.url.path),
-    )
+def _translate_pydantic(msg: str)-> str:
+    clean = re.sub(r"^Value error, ", "", msg)
+    return _PYDANTIC_TO_PT.get(clean, clean)
 
 
 # _ Handler Validation Error
 @app.exception_handler(RequestValidationError)
 async def validation_error_handler(request: Request, exc: RequestValidationError):
-    details = jsonable_encoder(
-        exc.errors(),
-        custom_encoder={Exception: lambda e: str(e)}
-    )
+    fields: dict[str,str] = {}
+    for error in exc.errors():
+        loc = error.get("loc", [])
+        field = next((str(p) for p in reversed(loc) if not isinstance(p, int)), "body")
+        
+        if field not in fields:
+            fields[field] = _translate_pydantic(error.get("msg", "Valor inválido"))
+
     return JSONResponse(
         status_code=422,
         content={
             "error": {
                 "code": "validation_error",
-                "message": "Request validation failed",
+                "message": "Verifique os campos e tente novamente.",
                 "path": request.url.path,
-                "details": details
+                "fields": fields,
             }
         }
     )

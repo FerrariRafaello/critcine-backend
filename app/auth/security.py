@@ -43,7 +43,7 @@ def create_access_token(user_id: int, version: int = 0) -> str:
 
 def get_current_user_id(
     token: str = Depends(oauth2_scheme),
-    request: Request = None  # type: ignore[assignment]
+    request: Request = None  # type: ignore - assignment
 ) -> int:
     try:
         payload = pyjwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
@@ -70,5 +70,4 @@ def get_current_user_id(
                 detail="Session invalidated. Please log in again.",
                 headers={"WWW-Authenticate": "Bearer"},
             )
-
     return user_id
