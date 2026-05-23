@@ -310,8 +310,8 @@ class ReviewDB:
                 )
 
         with self.pool.connection() as conn:
-            # params without limit/offset for the count
-            total = cast(dict[str, Any], conn.execute(count_query, params[:-2]).fetchone())["n"]
+            # params[0] is for the liked_by_me subquery in the main SELECT — skip it for count
+            total = cast(dict[str, Any], conn.execute(count_query, params[1:-2]).fetchone())["n"]
             rows = conn.execute(query, params).fetchall()
             return list(rows), total
 
