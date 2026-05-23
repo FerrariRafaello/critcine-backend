@@ -263,12 +263,14 @@ async def validation_error_handler(request: Request, exc: RequestValidationError
 # _ Fallback
 @app.exception_handler(Exception)
 async def unhandled_error_handler(request: Request, exc: Exception):
-    # include request_id so we can find the full traceback in logs
     request_id = getattr(request.state, "request_id", "unknown")
     logger.exception("unhandled_error request_id={} path={}", request_id, request.url.path)
+    origin = request.headers.get("origin", "")
+    headers = {"Access-Control-Allow-Origin": origin} if origin in origins else {}
     return JSONResponse(
         status_code=500,
-        content=build_error("internal_error", "Internal server error", request.url.path)
+        content=build_error("internal_error", "Internal server error", request.url.path),
+        headers=headers,
     )
 
 

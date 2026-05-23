@@ -53,7 +53,7 @@ def get_reviews_by_user(
     return service.get_reviews_by_user(user_id)
 
 
-@router.get("/feed", response_model=list[ReviewOutFull])
+@router.get("/feed", response_model=PageOut[ReviewOutFull])
 def get_all_reviews(
     sort: str = Query("newest", pattern="^(newest|oldest|popular)$"),
     search_user: Optional[str] = Query(None, max_length=100),
