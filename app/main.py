@@ -6,7 +6,6 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.encoders import jsonable_encoder
 
 # Logging
 from loguru import logger
@@ -183,6 +182,36 @@ app.include_router(router_follows)
 @app.get("/health")
 def healthcheck():
     return {"status": "ok"}
+
+
+_HTTP_MESSAGES_PT: dict[str, str] = {
+    "Invalid credentials": "E-mail ou senha incorretos",
+    "User not found": "Usuário não encontrado",
+    "Cannot modify another user's profile": "Você não pode modificar o perfil de outro usuário",
+    "CPF cannot be changed": "O CPF não pode ser alterado",
+}
+
+# _ Handler HTTPException
+@app.exception_handler(HTTPException)
+async def http_error_handler(request: Request, exc: HTTPException):
+    code = "http_error"
+    message = _HTTP_MESSAGES_PT.get(str(exc.detail), str(exc.detail))
+
+    if exc.status_code == 401:
+        code = "unauthorized"
+    elif exc.status_code == 403:
+        code = "forbidden"
+    elif exc.status_code == 404:
+        code = "not_found"
+    elif exc.status_code == 409:
+        code = "conflict"
+    elif exc.status_code == 422:
+        code = "validation_error"
+    
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=build_error(code, message, request.url.path),
+    )
 
 
 _PYDANTIC_TO_PT: dict[str, str] = {

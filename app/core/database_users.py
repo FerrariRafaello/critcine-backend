@@ -170,7 +170,7 @@ class UserDB:
                 )
                 return result.rowcount > 0
         except psycopg.IntegrityError:
-            raise DuplicateEntryError("CPF or email already exists")
+            raise DuplicateEntryError("E-mail ou CPF já cadastrado.")
 
     def delete_user(self, user_id:int) -> bool:
         with self.pool.connection() as conn:
