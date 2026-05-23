@@ -252,7 +252,7 @@ class ReviewDB:
         following_only: bool = False,
         limit: int = 50,
         offset: int = 0
-    ) -> list[Any]:
+    ) -> tuple[list[Any], int]:
 
         order_col = {
             "newest": sql.SQL("r.created_at DESC"),
@@ -284,27 +284,36 @@ class ReviewDB:
 
         params += [limit, offset]
 
+        count_query = sql.SQL("""          
+                            SELECT COUNT(*) AS n
+                            FROM reviews r
+                            JOIN users u ON u.id = r.user_id
+                            WHERE {where}
+                            """).format(where=sql.SQL(" AND ").join(filters))
+
         query = sql.SQL("""
-            SELECT r.id, r.user_id, r.tmdb_movie_id, r.rating, r.comment, r.likes,
-                EXISTS (
-                    SELECT 1 FROM review_likes rl
-                    WHERE rl.review_id = r.id AND rl.user_id = %s
-                ) AS liked_by_me,
-                r.created_at,
-                u.name AS user_name
-            FROM reviews r
-            JOIN users u ON u.id = r.user_id
-            WHERE {where}
-            ORDER BY {order}
-            LIMIT %s OFFSET %s
-        """).format(
-            where=sql.SQL(" AND ").join(filters),
-            order=order_col
-        )
+                        SELECT r.id, r.user_id, r.tmdb_movie_id, r.rating, r.comment, r.likes,
+                            EXISTS (
+                                SELECT 1 FROM review_likes rl
+                                WHERE rl.review_id = r.id AND rl.user_id = %s
+                            ) AS liked_by_me,
+                            r.created_at,
+                            u.name AS user_name
+                        FROM reviews r
+                        JOIN users u ON u.id = r.user_id
+                        WHERE {where}
+                        ORDER BY {order}
+                        LIMIT %s OFFSET %s
+                    """).format(
+                        where=sql.SQL(" AND ").join(filters),
+                        order=order_col
+                )
 
         with self.pool.connection() as conn:
+            # params without limit/offset for the count
+            total = cast(dict[str, Any], conn.execute(count_query, params[:-2]).fetchone())["n"]
             rows = conn.execute(query, params).fetchall()
-            return list(rows)
+            return list(rows), total
 
     def close_db_reviews(self)->None:
         self.pool.close()

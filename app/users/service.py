@@ -23,9 +23,10 @@ class UserService:
         except DuplicateEntryError as exc:
             raise ValueError(str(exc))
 
-    def list_users(self, limit: int, offset: int) -> list[UserPublicOut]:
+    def list_users(self, limit: int, offset: int) -> tuple[list[UserPublicOut], int]:
         rows = self.db.list_users(limit=limit, offset=offset)
-        return [
+        total = self.db.count_users()
+        items = [
             UserPublicOut(
                 id=row["id"],
                 name=row["name"],
@@ -36,6 +37,8 @@ class UserService:
                 cover_id=row["cover_id"],
             ) for row in rows
         ]
+        return items, total
+    
 
     def get_user(self, user_id: int, follow_stats: dict | None = None) -> UserOut:
         row = self.db.get_user_by_id(user_id)

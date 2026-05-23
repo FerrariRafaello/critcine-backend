@@ -67,6 +67,11 @@ class UserDB:
                 (limit, offset,),
             ).fetchall()
             return list(rows)
+    
+    def count_users(self)->int:
+        with self.pool.connection() as conn:
+            row = conn.execute("SELECT COUNT(*) AS n FROM users").fetchone()
+            return cast(dict[str, Any], row)["n"]
 
     def get_user_by_id(self, user_id:int) -> dict[str, Any] | None:
         with self.pool.connection() as conn:

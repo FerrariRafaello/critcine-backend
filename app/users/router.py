@@ -1,3 +1,4 @@
+# _ IMPORTS
 import os
 from fastapi import APIRouter, Query, Depends, Request, status, HTTPException
 
@@ -9,6 +10,7 @@ from app.users.service import UserService
 from app.follows.database import FollowDB
 from app.auth.security import get_current_user_id
 from app.core.ip_limits import check_registration_limit, record_registration
+from app.core.schemas import PageOut
 
 
 router = APIRouter(prefix="/v1/users", tags=["Users"])
@@ -67,14 +69,16 @@ def get_me(
     return service.get_user(current_user_id, follow_stats=stats)
 
 
-@router.get("", response_model=list[UserPublicOut], status_code=status.HTTP_200_OK)
+@router.get("", response_model=PageOut[UserPublicOut], status_code=status.HTTP_200_OK)
 def list_users(
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
     service: UserService = Depends(get_user_service),
     _: int = Depends(get_current_user_id)
-) -> list[UserOut]:
-    return service.list_users(limit=limit, offset=offset)
+)-> PageOut:
+    items, total = service.list_users(limit=limit, offset=offset)
+    return PageOut(data=items, total=total, limit=limit, offset=offset)
+    
 
 
 @router.get("/{user_id}", response_model=UserOut, status_code=status.HTTP_200_OK)

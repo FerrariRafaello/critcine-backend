@@ -8,6 +8,7 @@ from slowapi.util import get_remote_address
 from app.reviews.schemas import ReviewCreate, ReviewUpdate, ReviewOut, ReviewOutFull
 from app.reviews.service import ReviewService
 from app.auth.security import get_current_user_id
+from app.core.schemas import PageOut
 
 
 router = APIRouter(prefix="/v1/reviews", tags=["Reviews"])
@@ -63,8 +64,8 @@ def get_all_reviews(
     offset: int = Query(0, ge=0),
     service: ReviewService = Depends(get_review_service),
     current_user_id: int = Depends(get_current_user_id)
-) -> list[ReviewOutFull]:
-    return service.get_all_reviews(
+) -> PageOut[ReviewOutFull]:
+    items, total = service.get_all_reviews(
         current_user_id=current_user_id,
         sort=sort,
         search_user=search_user,
@@ -73,6 +74,8 @@ def get_all_reviews(
         limit=limit,
         offset=offset
     )
+    return  PageOut(data=items, total=total, limit=limit, offset=offset)
+
 
 
 @router.patch("/{review_id}", response_model=ReviewOut)

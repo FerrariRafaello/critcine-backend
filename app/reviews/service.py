@@ -97,8 +97,8 @@ class ReviewService:
         following_only: bool = False,
         limit: int = 50,
         offset: int = 0
-    ) -> list[ReviewOutFull]:
-        rows = self.db.get_all_reviews(
+    ) -> tuple[list[ReviewOutFull], int]:
+        rows, total = self.db.get_all_reviews(
             current_user_id=current_user_id,
             sort=sort,
             search_user=search_user,
@@ -107,4 +107,4 @@ class ReviewService:
             limit=limit,
             offset=offset
         )
-        return [ReviewOutFull(**row) for row in rows]
+        return [ReviewOutFull(**row) for row in rows], total
