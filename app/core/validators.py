@@ -36,4 +36,4 @@ def is_valid_cpf(cpf: str) -> bool:
 
 def validate_cpf_or_raise(cpf: str) -> None:
     if not is_valid_cpf(cpf):
-        raise ValueError("Invalid CPF")
+        raise ValueError("CPF inválido")

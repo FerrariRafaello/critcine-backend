@@ -171,6 +171,5 @@ def test_cpf_raise_error(client_users, auth_token):
     )
     assert_error_contract(resp, 422, "validation_error", f"/v1/users/{user_id}")
     body = resp.json()
-    assert "details" in body["error"]
-    assert isinstance(body["error"]["details"], list)
-    assert len(body["error"]["details"]) > 0
+    assert "fields" in body["error"]
+    assert "cpf" in body["error"]["fields"]
