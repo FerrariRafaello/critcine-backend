@@ -60,18 +60,19 @@ class ReviewDB:
             tmdb_movie_id:int,
             rating:float,
             comment:Optional[str]=None
-    )->int:
+    )->dict[str, Any]:
         try:
             with self.pool.connection() as conn:
                 row=conn.execute(
                     """
                     INSERT INTO reviews(user_id, tmdb_movie_id, rating, comment)
                     VALUES (%s, %s, %s, %s)
-                    RETURNING id
+                    RETURNING id, user_id, tmdb_movie_id, rating, comment, likes,
+                              FALSE AS liked_by_me, created_at
                     """,
                     (user_id, tmdb_movie_id, rating, comment,),
                 ).fetchone()
-                return cast(dict[str, Any], row)["id"]
+                return cast(dict[str, Any], row)
         except psycopg.IntegrityError:
             raise DuplicateEntryError("Review already exists for this movie")
 
@@ -149,27 +150,21 @@ class ReviewDB:
     def update_review(
             self,
             review_id:int,
-            rating:Optional[float]=None,
+            rating:float,
             comment:Optional[str]=None
-    )->bool:
-        current=self.get_review_by_id(review_id)
-        if current is None:
-            return False
-
+    )->dict[str, Any] | None:
         with self.pool.connection() as conn:
-            result=conn.execute(
+            row=conn.execute(
                 """
                 UPDATE reviews
                 SET rating=%s, comment=%s
                 WHERE id=%s
+                RETURNING id, user_id, tmdb_movie_id, rating, comment, likes,
+                          FALSE AS liked_by_me, created_at
                 """,
-                (
-                    rating if rating is not None else current["rating"],
-                    comment if comment is not None else current["comment"],
-                    review_id,
-                ),
-            )
-        return result.rowcount > 0
+                (rating, comment, review_id),
+            ).fetchone()
+        return cast(dict[str, Any] | None, row)
 
     def delete_review(self,review_id:int)->bool:
         with self.pool.connection() as conn:
@@ -179,7 +174,7 @@ class ReviewDB:
             )
             return result.rowcount > 0
 
-    def like_review(self, review_id:int, user_id:int)->str:
+    def like_review(self, review_id:int, user_id:int)->str | dict[str, Any]:
         with self.pool.connection() as conn:
             exists=conn.execute(
                 "SELECT 1 FROM reviews WHERE id = %s",
@@ -202,17 +197,19 @@ class ReviewDB:
             if inserted is None:
                 return "already_liked"
 
-            conn.execute(
+            row=conn.execute(
                 """
                 UPDATE reviews
                 SET likes = likes + 1
                 WHERE id = %s
+                RETURNING id, user_id, tmdb_movie_id, rating, comment, likes,
+                          TRUE AS liked_by_me, created_at
                 """,
                 (review_id,),
-            )
-            return "liked"
+            ).fetchone()
+            return cast(dict[str, Any], row)
 
-    def unlike_review(self, review_id: int, user_id: int) -> str:
+    def unlike_review(self, review_id: int, user_id: int) -> str | dict[str, Any]:
         with self.pool.connection() as conn:
             exists = conn.execute(
                 "SELECT 1 FROM reviews WHERE id = %s",
@@ -233,15 +230,17 @@ class ReviewDB:
             if deleted is None:
                 return "not_liked"
 
-            conn.execute(
+            row = conn.execute(
                 """
                 UPDATE reviews
                 SET likes = GREATEST(likes - 1, 0)
                 WHERE id = %s
+                RETURNING id, user_id, tmdb_movie_id, rating, comment, likes,
+                          FALSE AS liked_by_me, created_at
                 """,
                 (review_id,),
-            )
-            return "unliked"
+            ).fetchone()
+            return cast(dict[str, Any], row)
 
     def get_all_reviews(
         self,
