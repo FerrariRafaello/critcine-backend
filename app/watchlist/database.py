@@ -38,18 +38,18 @@ class WatchlistDB:
             user_id:int,
             tmdb_movie_id:int,
             status:str="want_to_watch"
-    )->int:
+    )->dict[str, Any]:
         try:
             with self.pool.connection() as conn:
                 row=conn.execute(
-                     """
+                    """
                     INSERT INTO watchlist(user_id, tmdb_movie_id, status)
                     VALUES (%s, %s, %s)
-                    RETURNING id
+                    RETURNING id, user_id, tmdb_movie_id, status, created_at
                     """,
                     (user_id, tmdb_movie_id, status,),
                 ).fetchone()
-                return cast(dict[str, Any], row)["id"]
+                return cast(dict[str, Any], row)
         except psycopg.IntegrityError:
             raise DuplicateEntryError("Movie already in watchlist")
 
@@ -82,17 +82,18 @@ class WatchlistDB:
             self,
             item_id:int,
             status:str
-    )->bool:
+    )->dict[str, Any] | None:
         with self.pool.connection() as conn:
-            result=conn.execute(
+            row=conn.execute(
                 """
                 UPDATE watchlist
                 SET status=%s
                 WHERE id=%s
+                RETURNING id, user_id, tmdb_movie_id, status, created_at
                 """,
                 (status, item_id,),
-            )
-            return result.rowcount > 0
+            ).fetchone()
+            return cast(dict[str, Any] | None, row)
 
     def delete_watchlist_item(self, item_id:int)->bool:
         with self.pool.connection() as conn:

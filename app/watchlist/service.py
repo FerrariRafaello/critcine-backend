@@ -15,12 +15,12 @@ class WatchlistService:
             payload:WatchlistCreate
     )->WatchlistOut:
         try:
-            item_id=self.db.add_to_watchlist(
+            item=self.db.add_to_watchlist(
                 user_id=user_id,
                 tmdb_movie_id=payload.tmdb_movie_id,
                 status=payload.status
             )
-            return self.get_item(item_id)
+            return WatchlistOut(**item)
         except DuplicateEntryError as exc:
             raise ValueError(str(exc))
 
@@ -51,9 +51,9 @@ class WatchlistService:
             item_id=item_id,
             status=payload.status
         )
-        if not updated:
+        if updated is None:
             raise LookupError("Watchlist item not found")
-        return self.get_item(item_id)
+        return WatchlistOut(**updated)
 
     def delete_item(self, item_id:int, user_id:int)->None:
         item=self.db.get_watchlist_item(item_id)
