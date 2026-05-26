@@ -12,20 +12,20 @@ class UserService:
 
     def create_user(self, payload:UserCreate)->UserOut:
         try:
-            user_id = self.db.create_user(
+            row = self.db.create_user(
                 name=payload.name,
                 age=payload.age,
                 email=payload.email,
                 cpf=payload.cpf,
                 hashed_password=hash_password(payload.password)
             )
-            return self.get_user(user_id)
+            return UserOut(**row, followers_count=0, following_count=0, is_following=False)
         except DuplicateEntryError as exc:
             raise ValueError(str(exc))
 
     def list_users(self, limit: int, offset: int) -> tuple[list[UserPublicOut], int]:
         rows = self.db.list_users(limit=limit, offset=offset)
-        total = self.db.count_users()
+        total = rows[0]["total_count"] if rows else 0
         items = [
             UserPublicOut(
                 id=row["id"],
@@ -67,7 +67,7 @@ class UserService:
             self,
             user_id:int,
             payload:UserUpdate
-    )->UserOut:
+    )->None:
         current=self.db.get_user_by_id(user_id)
         if current is None:
             raise LookupError("User not found")
@@ -95,13 +95,11 @@ class UserService:
         if not updated:
             raise LookupError("User not found")
 
-        return self.get_user(user_id)
-
     def patch_user(
             self,
             user_id:int,
             payload:UserPatch
-    )-> UserOut:
+    )-> None:
         current=self.db.get_user_by_id(user_id)
         if current is None:
             raise LookupError("User not found")
@@ -112,23 +110,21 @@ class UserService:
         try:
             updated=self.db.patch_user(
                 user_id=user_id,
-                name=payload.name,
-                age=payload.age,
-                email=payload.email,
-                cpf=payload.cpf,
-                bio=payload.bio,
-                pronouns=payload.pronouns,
-                favorite_genres=payload.favorite_genres,
-                avatar_id=payload.avatar_id,
-                cover_id=payload.cover_id
+                name=payload.name if payload.name is not None else current["name"],
+                age=payload.age if payload.age is not None else current["age"],
+                email=payload.email if payload.email is not None else current["email"],
+                cpf=payload.cpf if payload.cpf is not None else current["cpf"],
+                bio=payload.bio if payload.bio is not None else current["bio"],
+                pronouns=payload.pronouns if payload.pronouns is not None else current["pronouns"],
+                favorite_genres=payload.favorite_genres if payload.favorite_genres is not None else current["favorite_genres"],
+                avatar_id=payload.avatar_id if payload.avatar_id is not None else current["avatar_id"],
+                cover_id=payload.cover_id if payload.cover_id is not None else current["cover_id"],
             )
         except DuplicateEntryError as exc:
             raise ValueError(str(exc))
 
         if not updated:
             raise LookupError("User not found")
-
-        return self.get_user(user_id)
 
     def delete_user(self, user_id:int)->None:
         deleted = self.db.delete_user(user_id)
