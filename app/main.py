@@ -22,6 +22,7 @@ from app.core.database_users import UserDB
 from app.reviews.database import ReviewDB
 from app.watchlist.database import WatchlistDB
 from app.follows.database import FollowDB
+from app.notifications.database import NotificationDB
 
 # Routers
 from app.movies.router import router as router_movies
@@ -31,6 +32,7 @@ from app.tmdb.router import router as router_tmdb
 from app.reviews.router import router as router_reviews
 from app.watchlist.router import router as router_watchlist
 from app.follows.router import router as router_follows
+from app.notifications.router import router as router_notifications
 
 # Security
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -45,6 +47,7 @@ async def lifespan(app: FastAPI):
     app.state.db_reviews = ReviewDB()
     app.state.db_watchlist = WatchlistDB()
     app.state.db_follows = FollowDB()
+    app.state.db_notifications = NotificationDB()
     try:
         yield
     finally:
@@ -54,6 +57,7 @@ async def lifespan(app: FastAPI):
         app.state.db_reviews.close_db_reviews()
         app.state.db_watchlist.close_db_watchlist()
         app.state.db_follows.close_db_follows()
+        app.state.db_notifications.close_db_notifications()
 
 
 limiter = Limiter(key_func=get_remote_address)
@@ -176,6 +180,7 @@ app.include_router(router_tmdb)
 app.include_router(router_reviews)
 app.include_router(router_watchlist)
 app.include_router(router_follows)
+app.include_router(router_notifications)
 
 
 # _ Health Check

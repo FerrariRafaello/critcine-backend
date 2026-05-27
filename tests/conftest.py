@@ -23,6 +23,7 @@ from app.core.database_users import UserDB
 from app.reviews.database import ReviewDB
 from app.watchlist.database import WatchlistDB
 from app.follows.database import FollowDB
+from app.notifications.database import NotificationDB
 
 # Services
 from app.movies.service import MovieService
@@ -126,6 +127,24 @@ def test_db_users():
 
 
 @pytest.fixture(scope="function")
+def test_db_notifications():
+    db_url = os.getenv("TEST_DATABASE_URL") or os.getenv("DATABASE_URL")
+    assert db_url, "DATABASE_URL is not configured"
+
+    with ConnectionPool(
+        db_url,
+        min_size=2,
+        max_size=10,
+        open=True,
+        kwargs={"row_factory": dict_row}
+    ) as pool:
+        db = NotificationDB(pool=pool)  # type: ignore  # _ensure_table cria a tabela se não existir
+        with pool.connection() as conn:
+            conn.execute("TRUNCATE TABLE notifications RESTART IDENTITY;")
+        yield db
+
+
+@pytest.fixture(scope="function")
 def test_db_follows(test_db_users):
     db_url = os.getenv("TEST_DATABASE_URL") or os.getenv("DATABASE_URL")
     assert db_url, "DATABASE_URL is not configured"
@@ -155,7 +174,7 @@ def client_movie(test_db_movies):
 
 
 @pytest.fixture(scope="function")
-def client_users(test_db_users, test_db_follows):
+def client_users(test_db_users, test_db_follows, test_db_notifications):
     def override_service():
         return UserService(test_db_users)
 
@@ -163,7 +182,7 @@ def client_users(test_db_users, test_db_follows):
         return test_db_follows
 
     def override_follow_service():
-        return FollowService(test_db_follows)
+        return FollowService(test_db_follows, test_db_notifications)
 
     app.dependency_overrides[get_user_service] = override_service
     app.dependency_overrides[get_follow_db] = override_follow_db
@@ -177,7 +196,7 @@ def client_users(test_db_users, test_db_follows):
 
 
 @pytest.fixture(scope="function")
-def client_auth(test_db_users, test_db_reviews, test_db_watchlist, test_db_follows):
+def client_auth(test_db_users, test_db_reviews, test_db_watchlist, test_db_follows, test_db_notifications):
     def override_auth():
         return AuthService(test_db_users)
 
@@ -185,7 +204,7 @@ def client_auth(test_db_users, test_db_reviews, test_db_watchlist, test_db_follo
         return UserService(test_db_users)
 
     def override_review_service():
-        return ReviewService(test_db_reviews)
+        return ReviewService(test_db_reviews, test_db_notifications)
 
     def override_watchlist_service():
         return WatchlistService(test_db_watchlist)
@@ -194,7 +213,7 @@ def client_auth(test_db_users, test_db_reviews, test_db_watchlist, test_db_follo
         return test_db_follows
 
     def override_follow_service():
-        return FollowService(test_db_follows)
+        return FollowService(test_db_follows, test_db_notifications)
 
     app.dependency_overrides[get_auth_service] = override_auth
     app.dependency_overrides[get_user_service] = override_user_service

@@ -10,7 +10,7 @@ router = APIRouter(prefix="/v1/users", tags=["Follows"])
 
 
 def get_follow_service(request: Request) -> FollowService:
-    return FollowService(request.app.state.db_follows)
+    return FollowService(request.app.state.db_follows, request.app.state.db_notifications)
 
 
 # _ POST — follow a user

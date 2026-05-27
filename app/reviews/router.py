@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Request, status, Query
 
 from slowapi import Limiter
 from slowapi.util import get_remote_address
-
+from app.notifications.database import NotificationDB
 from app.reviews.schemas import ReviewCreate, ReviewUpdate, ReviewOut, ReviewOutFull
 from app.reviews.service import ReviewService
 from app.auth.security import get_current_user_id
@@ -20,8 +20,8 @@ def get_write_limit() -> str:
 
 
 def get_review_service(request: Request) -> ReviewService:
-    db = request.app.state.db_reviews
-    return ReviewService(db)
+    return ReviewService(request.app.state.db_reviews, request.app.state.db_notifications)
+
 
 
 @router.post("", response_model=ReviewOut, status_code=status.HTTP_201_CREATED)

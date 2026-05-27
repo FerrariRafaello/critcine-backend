@@ -1,16 +1,23 @@
 from app.follows.database import FollowDB
 from app.follows.schemas import FollowUserOut, FollowStatsOut
+from app.notifications.database import NotificationDB
 
 
 class FollowService:
-    def __init__(self, db: FollowDB) -> None:
+    def __init__(self, db: FollowDB, notification_db: NotificationDB) -> None:
         self.db = db
+        self.notification_db = notification_db
 
     def follow(self, follower_id: int, followed_id: int) -> FollowStatsOut:
         # self-follow is blocked at this layer so the DB check constraint is just a safety net
         if follower_id == followed_id:
             raise ValueError("Cannot follow yourself")
         self.db.follow(follower_id, followed_id)
+        self.notification_db.create(
+            user_id=followed_id,
+            from_user_id=follower_id,
+            type="follow",
+        )
         return FollowStatsOut(**self.db.get_stats(followed_id, viewer_id=follower_id))
 
     def unfollow(self, follower_id: int, followed_id: int) -> FollowStatsOut:

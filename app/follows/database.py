@@ -8,7 +8,7 @@ from app.core.config import settings
 
 
 class FollowDB:
-    def __init__(self, db_url: str | None = None, pool: ConnectionPool | None = None):
+    def __init__(self, db_url: str | None = None, pool: ConnectionPool | None = None, notification_db=None):
         if pool is not None:
             self.pool = pool
         else:
@@ -23,9 +23,9 @@ class FollowDB:
                 timeout=10,
                 kwargs={"row_factory": dict_row}
             )
+        self.notification_db = notification_db
 
     def follow(self, follower_id: int, followed_id: int) -> bool:
-        # ON CONFLICT DO NOTHING makes this idempotent — double-following is silently ignored
         with self.pool.connection() as conn:
             row = conn.execute(
                 """
@@ -36,7 +36,16 @@ class FollowDB:
                 """,
                 (follower_id, followed_id),
             ).fetchone()
-            return row is not None
+            followed = row is not None
+
+        if followed and self.notification_db is not None:
+            self.notification_db.create(
+                user_id=followed_id,
+                from_user_id=follower_id,
+                type="follow",
+            )
+
+        return followed
 
     def unfollow(self, follower_id: int, followed_id: int) -> bool:
         with self.pool.connection() as conn:

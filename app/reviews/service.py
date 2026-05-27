@@ -1,6 +1,7 @@
 # _ IMPORTS
 from typing import Any, Optional, cast
 
+from app.notifications.database import NotificationDB
 from app.reviews.database import ReviewDB
 from app.reviews.schemas import ReviewCreate, ReviewUpdate, ReviewOut, ReviewOutFull
 from app.core.exceptions import DuplicateEntryError
@@ -8,8 +9,9 @@ from app.core.exceptions import DuplicateEntryError
 
 # _ Service Class
 class ReviewService:
-    def __init__(self, db:ReviewDB)->None:
+    def __init__(self, db:ReviewDB, notification_db: NotificationDB)->None:
         self.db=db
+        self.notification_db = notification_db
 
     def create_review(self, user_id:int, payload:ReviewCreate)->ReviewOut:
         try:
@@ -72,13 +74,21 @@ class ReviewService:
             raise PermissionError("Not allowed to delete this review")
         self.db.delete_review(review_id)
 
-    def like_review(self, review_id:int, user_id:int)->ReviewOut:
-        result=self.db.like_review(review_id, user_id)
+    def like_review(self, review_id: int, user_id: int) -> ReviewOut:
+        result = self.db.like_review(review_id, user_id)
         if result == "not_found":
             raise LookupError("Review not found")
         if result == "already_liked":
             raise ValueError("You already liked this review")
-        return ReviewOut(**cast(dict[str, Any], result))
+        review = ReviewOut(**cast(dict[str, Any], result))
+        if review.user_id != user_id:
+            self.notification_db.create(
+                user_id=review.user_id,
+                from_user_id=user_id,
+                type="review_like",
+                entity_id=review_id,
+            )
+        return review
 
     def unlike_review(self, review_id: int, user_id: int) -> ReviewOut:
         result = self.db.unlike_review(review_id, user_id)
