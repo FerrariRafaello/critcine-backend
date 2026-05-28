@@ -2,7 +2,6 @@
 from fastapi import APIRouter, Depends, Query, Request, status
 
 from app.auth.security import get_current_user_id
-from app.notifications.database import NotificationDB
 from app.notifications.schemas import NotificationOut
 from app.notifications.service import NotificationService
 

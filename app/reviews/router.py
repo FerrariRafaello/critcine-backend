@@ -4,7 +4,6 @@ from fastapi import APIRouter, Depends, Request, status, Query
 
 from slowapi import Limiter
 from slowapi.util import get_remote_address
-from app.notifications.database import NotificationDB
 from app.reviews.schemas import ReviewCreate, ReviewUpdate, ReviewOut, ReviewOutFull
 from app.reviews.service import ReviewService
 from app.auth.security import get_current_user_id

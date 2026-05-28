@@ -1,5 +1,4 @@
 # _ IMPORTS
-from typing import Optional
 
 from app.notifications.database import NotificationDB
 from app.notifications.schemas import NotificationOut

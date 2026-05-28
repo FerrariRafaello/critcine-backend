@@ -1,7 +1,6 @@
 # _ IMPORTS
-from typing import Any, Optional, cast
+from typing import Any, Optional
 
-import psycopg
 from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
 
