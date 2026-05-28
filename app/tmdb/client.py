@@ -8,7 +8,7 @@ from typing import Any, Optional
 import httpx
 
 from app.core.config import settings
-from app.tmdb.schemas import MovieResult, MovieSearchResponse
+from app.tmdb.schemas import MovieResult, MovieSearchResponse, TrendingPersonResult
 
 
 BASE_URL = "https://api.themoviedb.org/3"
@@ -301,6 +301,59 @@ def get_movies_by_provider(
     )
     _cache_set(key, result, 7_200)  # 2h
     return result
+
+
+def get_trending_people() -> list[TrendingPersonResult]:
+    cached = _cache_get("trending_people")
+    if cached is not None:
+        return cached
+
+    def _fetch_day() -> list[dict]:
+        resp = _http.get(
+            f"{BASE_URL}/trending/person/day",
+            params={"api_key": settings.TMDB_API_KEY, "language": "pt-BR"},
+        )
+        resp.raise_for_status()
+        return resp.json()["results"]
+
+    def _fetch_week() -> list[dict]:
+        resp = _http.get(
+            f"{BASE_URL}/trending/person/week",
+            params={"api_key": settings.TMDB_API_KEY, "language": "pt-BR"},
+        )
+        resp.raise_for_status()
+        return resp.json()["results"]
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        fut_day = pool.submit(_fetch_day)
+        fut_week = pool.submit(_fetch_week)
+        day_results = fut_day.result()
+        week_results = fut_week.result()
+
+    week_rank = {p["id"]: i for i, p in enumerate(week_results)}
+
+    people: list[TrendingPersonResult] = []
+    for day_rank, person in enumerate(day_results[:20]):
+        pid = person["id"]
+        if pid not in week_rank:
+            direction = "new"
+        elif day_rank < week_rank[pid]:
+            direction = "up"
+        elif day_rank == week_rank[pid]:
+            direction = "stable"
+        else:
+            direction = "down"
+
+        people.append(TrendingPersonResult(
+            id=pid,
+            name=person["name"],
+            profile_path=person.get("profile_path"),
+            known_for_department=person.get("known_for_department", "Acting"),
+            trending_direction=direction,
+        ))
+
+    _cache_set("trending_people", people, 3_600)  # 1h
+    return people
 
 
 def get_national_films() -> MovieSearchResponse:

@@ -22,3 +22,11 @@ class MovieSearchResponse(BaseModel):
     results:list[MovieResult]
     total_results:int
     total_pages:int
+
+
+class TrendingPersonResult(BaseModel):
+    id: int
+    name: str
+    profile_path: Optional[str] = None
+    known_for_department: str = "Acting"
+    trending_direction: str  # "up", "down", "stable", "new"

@@ -5,7 +5,7 @@ from fastapi import APIRouter, Query, Depends, Request
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
-from app.tmdb.schemas import MovieResult, MovieSearchResponse
+from app.tmdb.schemas import MovieResult, MovieSearchResponse, TrendingPersonResult
 from app.auth.security import get_current_user_id
 from app.reviews.database import ReviewDB
 from app.tmdb.client import (
@@ -13,7 +13,7 @@ from app.tmdb.client import (
     get_movie_credits, get_movie_videos, get_top_rated, get_watch_providers,
     discover_movies_by_genre, get_for_you, get_classics,
     get_animation, get_top10_today, get_movies_by_provider, get_available_providers,
-    get_national_films, get_movies_by_ids
+    get_national_films, get_movies_by_ids, get_trending_people
 )
 
 
@@ -136,6 +136,13 @@ def classics(
     _: int = Depends(get_current_user_id)
 ) -> MovieSearchResponse:
     return get_classics()
+
+
+@router.get("/trending-people", response_model=list[TrendingPersonResult])
+def trending_people(
+    _: int = Depends(get_current_user_id)
+) -> list[TrendingPersonResult]:
+    return get_trending_people()
 
 
 @router.get("/animation", response_model=MovieSearchResponse)
