@@ -29,4 +29,5 @@ class TrendingPersonResult(BaseModel):
     name: str
     profile_path: Optional[str] = None
     known_for_department: str = "Acting"
-    trending_direction: str  # "up", "down", "stable", "new"
+    trending_direction: str   # "up", "down", "stable"
+    rank_change: int          # positions moved (positive = up, negative = down, 0 = stable)

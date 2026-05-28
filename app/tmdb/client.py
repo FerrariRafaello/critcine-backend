@@ -308,41 +308,44 @@ def get_trending_people() -> list[TrendingPersonResult]:
     if cached is not None:
         return cached
 
+    base_params = {"api_key": settings.TMDB_API_KEY, "language": "pt-BR"}
+
     def _fetch_day() -> list[dict]:
-        resp = _http.get(
-            f"{BASE_URL}/trending/person/day",
-            params={"api_key": settings.TMDB_API_KEY, "language": "pt-BR"},
-        )
+        resp = _http.get(f"{BASE_URL}/trending/person/day", params=base_params)
         resp.raise_for_status()
         return resp.json()["results"]
 
-    def _fetch_week() -> list[dict]:
-        resp = _http.get(
-            f"{BASE_URL}/trending/person/week",
-            params={"api_key": settings.TMDB_API_KEY, "language": "pt-BR"},
-        )
+    def _fetch_week_page(page: int) -> list[dict]:
+        resp = _http.get(f"{BASE_URL}/trending/person/week", params={**base_params, "page": page})
         resp.raise_for_status()
         return resp.json()["results"]
 
-    with ThreadPoolExecutor(max_workers=2) as pool:
-        fut_day = pool.submit(_fetch_day)
-        fut_week = pool.submit(_fetch_week)
+    # fetch day + 3 pages of week (≈60 people) in parallel for accurate rank comparison
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        fut_day = executor.submit(_fetch_day)
+        fut_week = [executor.submit(_fetch_week_page, p) for p in range(1, 4)]
         day_results = fut_day.result()
-        week_results = fut_week.result()
+        week_results = [r for fut in fut_week for r in fut.result()]
 
+    # week_rank: position 0 = most trending this week
     week_rank = {p["id"]: i for i, p in enumerate(week_results)}
+    week_size = len(week_results)
 
     people: list[TrendingPersonResult] = []
     for day_rank, person in enumerate(day_results[:20]):
         pid = person["id"]
         if pid not in week_rank:
-            direction = "new"
-        elif day_rank < week_rank[pid]:
+            # genuinely new to trending — treat as coming from beyond the tracked range
+            change = week_size - day_rank
             direction = "up"
-        elif day_rank == week_rank[pid]:
-            direction = "stable"
         else:
-            direction = "down"
+            change = week_rank[pid] - day_rank  # positive = moved up, negative = moved down
+            if change > 0:
+                direction = "up"
+            elif change < 0:
+                direction = "down"
+            else:
+                direction = "stable"
 
         people.append(TrendingPersonResult(
             id=pid,
@@ -350,6 +353,7 @@ def get_trending_people() -> list[TrendingPersonResult]:
             profile_path=person.get("profile_path"),
             known_for_department=person.get("known_for_department") or "Acting",
             trending_direction=direction,
+            rank_change=abs(change),
         ))
 
     _cache_set("trending_people", people, 3_600)  # 1h
