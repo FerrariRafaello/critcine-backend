@@ -348,7 +348,7 @@ def get_trending_people() -> list[TrendingPersonResult]:
             id=pid,
             name=person["name"],
             profile_path=person.get("profile_path"),
-            known_for_department=person.get("known_for_department", "Acting"),
+            known_for_department=person.get("known_for_department") or "Acting",
             trending_direction=direction,
         ))
 
