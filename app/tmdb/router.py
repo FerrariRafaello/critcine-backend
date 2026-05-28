@@ -7,11 +7,13 @@ from slowapi.util import get_remote_address
 
 from app.tmdb.schemas import MovieResult, MovieSearchResponse
 from app.auth.security import get_current_user_id
+from app.reviews.database import ReviewDB
 from app.tmdb.client import (
     search_movies, get_movie, get_trending, get_now_playing,
     get_movie_credits, get_movie_videos, get_top_rated, get_watch_providers,
     discover_movies_by_genre, get_for_you, get_classics,
-    get_animation, get_top10_today, get_movies_by_provider, get_available_providers
+    get_animation, get_top10_today, get_movies_by_provider, get_available_providers,
+    get_national_films, get_movies_by_ids
 )
 
 
@@ -141,3 +143,21 @@ def animation(
     _: int = Depends(get_current_user_id)
 ) -> MovieSearchResponse:
     return get_animation()
+
+
+@router.get("/national", response_model=MovieSearchResponse)
+def national_films(
+    _: int = Depends(get_current_user_id)
+) -> MovieSearchResponse:
+    return get_national_films()
+
+
+@router.get("/critcine-top", response_model=MovieSearchResponse)
+def critcine_top(
+    request: Request,
+    _: int = Depends(get_current_user_id)
+) -> MovieSearchResponse:
+    db_reviews: ReviewDB = request.app.state.db_reviews
+    tmdb_ids = db_reviews.get_top_rated_movie_ids(limit=10)
+    movies = get_movies_by_ids(tmdb_ids)
+    return MovieSearchResponse(results=movies, total_results=len(movies), total_pages=1)

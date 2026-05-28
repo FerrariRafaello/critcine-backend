@@ -314,5 +314,19 @@ class ReviewDB:
             rows = conn.execute(query, params).fetchall()
             return list(rows), total
 
+    def get_top_rated_movie_ids(self, limit: int = 10) -> list[int]:
+        with self.pool.connection() as conn:
+            rows = conn.execute(
+                """
+                SELECT tmdb_movie_id
+                FROM reviews
+                GROUP BY tmdb_movie_id
+                ORDER BY AVG(rating) DESC, COUNT(*) DESC
+                LIMIT %s
+                """,
+                (limit,),
+            ).fetchall()
+            return [row["tmdb_movie_id"] for row in rows]
+
     def close_db_reviews(self)->None:
         self.pool.close()

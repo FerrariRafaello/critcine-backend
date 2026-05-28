@@ -303,6 +303,46 @@ def get_movies_by_provider(
     return result
 
 
+def get_national_films() -> MovieSearchResponse:
+    cached = _cache_get("national_films")
+    if cached is not None:
+        return cached
+    movies = _fetch_pages(
+        f"{BASE_URL}/discover/movie",
+        {
+            "api_key": settings.TMDB_API_KEY,
+            "language": "pt-BR",
+            "with_origin_country": "BR",
+            "sort_by": "popularity.desc",
+            "vote_count.gte": 10,
+        },
+        range(1, 3),
+    )
+    result = MovieSearchResponse(results=movies[:35], total_results=len(movies), total_pages=1)
+    _cache_set("national_films", result, 43_200)  # 12h
+    return result
+
+
+def get_movies_by_ids(tmdb_ids: list[int]) -> list[MovieResult]:
+    def _fetch_one(movie_id: int) -> MovieResult | None:
+        try:
+            return get_movie(movie_id)
+        except Exception:
+            return None
+
+    if not tmdb_ids:
+        return []
+
+    with ThreadPoolExecutor(max_workers=min(len(tmdb_ids), 10)) as pool:
+        results = list(pool.map(_fetch_one, tmdb_ids))
+
+    ordered = []
+    for movie_id, result in zip(tmdb_ids, results):
+        if result is not None:
+            ordered.append(result)
+    return ordered
+
+
 def get_available_providers() -> list[dict]:
     cached = _cache_get("available_providers")
     if cached is not None:
